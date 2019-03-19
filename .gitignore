@@ -332,3 +332,4 @@ ASALocalRun/
 
 #libs
 lib/
+*.dll
