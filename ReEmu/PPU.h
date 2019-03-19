@@ -1,8 +1,6 @@
 #pragma once
 #include "common.h"
 
-
-
 namespace PPU
 {
 	void write(u16 addr, u8 data);
