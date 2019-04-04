@@ -1,5 +1,8 @@
 #pragma once
 #include "common.h"
+#include <SFML/Main.hpp>
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
 
 namespace PPU
 {
@@ -19,4 +22,7 @@ namespace PPU
 	u8 readPPUDATA();
 	void OAMDMA(u8 data[0x100]);
 	void setsprite(bool data);
+	void tick();
+	void assignWindow(sf::RenderWindow *window);
+	void draw();
 }

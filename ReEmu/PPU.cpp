@@ -3,6 +3,12 @@
 u8 OAM[0x100];
 namespace PPU
 {
+	sf::RenderWindow *renderWindow;
+	u8 spriteData[256];
+	u8 renderBuffer[240][256];
+	sf::Image renderImage;
+	sf::Texture renderTexture;
+	sf::Sprite renderSprite;
 	u8 memory[0x3FFF];
 
 	struct PPUCTRL
@@ -185,5 +191,24 @@ namespace PPU
 		{
 			OAM[OAMADDR++] = data[i];
 		}
+	}
+
+	void assignWindow(sf::RenderWindow *window)
+	{
+		renderWindow = window;
+		renderImage.create(256, 240, sf::Color::Red);
+		renderTexture.loadFromImage(renderImage);
+		renderSprite.setTexture(renderTexture);
+		renderSprite.setPosition(sf::Vector2f(256.0, 0.0));
+	}
+
+	void tick()
+	{
+
+	}
+
+	void draw()
+	{
+		renderWindow->draw(renderSprite);
 	}
 }
