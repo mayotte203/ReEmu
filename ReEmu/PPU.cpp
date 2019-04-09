@@ -11,8 +11,11 @@ namespace PPU
 	sf::Sprite renderSprite;
 	u8 memory[0x4000];
 	int scanlineCount = 0;
-	int pixelCount = 0;
-	
+	int cycleCount = 0;
+	int renderX = 0;
+	int renderY = 0;
+	void pixel();
+
 	struct PPUCTRL
 	{
 		bool VBlankNMI = 0;
@@ -93,7 +96,7 @@ namespace PPU
 		writeLatch = 0;
 		bool oldVBlank = PPUSTATUS.VBlank;
 		PPUSTATUS.VBlank = false;
-		return 0x80 * oldVBlank + 0x40 * PPUSTATUS.spriteOverflow + 0x20 * PPUSTATUS.spriteOverflow;
+		return 0x80 * oldVBlank + 0x40 * PPUSTATUS.sprite0 + 0x20 * PPUSTATUS.spriteOverflow;
 	}
 
 	void writeOAMADDR(u8 data)
@@ -190,11 +193,83 @@ namespace PPU
 
 	void tick()
 	{
-
+		if (scanlineCount > 0 && scanlineCount < 241)
+		{
+			if (cycleCount > 0 && cycleCount < 257)
+			{
+				pixel();
+				renderX++;
+				if (renderX == 256)
+				{
+					renderX = 0;
+					renderY++;
+					if (renderY == 240)
+					{
+						renderY = 0;
+					}
+				}
+			}
+		}
+		cycleCount++;
+		if (cycleCount == 341)
+		{
+			cycleCount = 0;
+			scanlineCount++;
+			if (scanlineCount == 261)
+			{
+				scanlineCount = 0;
+			}
+		}
 	}
 
 	void draw()
 	{
+		renderTexture.loadFromImage(renderImage);
 		renderWindow->draw(renderSprite);
+	}
+
+	void pixel()
+	{
+		int currentSprite = -1;
+		for (int i = 0; i < 64; i++)
+		{
+			if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
+			{
+				currentSprite = i;
+				break;
+			}
+		}
+		if (currentSprite == -1)
+		{
+			renderImage.setPixel(renderX, renderY, sf::Color::Black);
+			return;
+		}
+		int xOffset = renderX - OAM[4 * currentSprite + 3];
+		int yOffset = renderY - OAM[4 * currentSprite];
+		int color = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + yOffset) << xOffset) & 0x80)
+			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + yOffset + 8) << xOffset) & 0x80);
+		switch (color)
+		{
+		case 0x180:
+		{
+			renderImage.setPixel(renderX, renderY, sf::Color(255, 255, 255, 255));
+			break;
+		}
+		case 0x100:
+		{
+			renderImage.setPixel(renderX, renderY, sf::Color(196, 196, 196, 255));
+			break;
+		}
+		case 0x80:
+		{
+			renderImage.setPixel(renderX, renderY, sf::Color(128, 128, 128, 255));
+			break;
+		}
+		case 0:
+		{
+			renderImage.setPixel(renderX, renderY, sf::Color(0, 0, 0, 0));
+			break;
+		}
+		}
 	}
 }
