@@ -1,5 +1,6 @@
 #include "CPU.h"
 #include "PPU.h"
+#include "GamePak.h"
 #include <fstream>
 #include <iostream>
 #include <SFML/Main.hpp>
@@ -215,6 +216,10 @@ namespace CPU
 			}
 			}
 			return 0;
+		}
+		else if (addr > 0x7FFF)
+		{
+			return GamePak::readPRGROM(addr - 0x8000);
 		}
 		return memory[addr];
 	}
@@ -789,6 +794,10 @@ inline	u16 ind()
 		}
 		*/
 		cycles += cycleCount[read(programCounter)];
+		for (int i = 0; i < cycleCount[read(programCounter)]; i++)
+		{
+			PPU::tick();
+		}
 		switch(read(programCounter))
 		{
 		case 0x69:
@@ -1584,7 +1593,8 @@ inline	u16 ind()
 	void init()
 	{
 		//std::ifstream ROMFile = std::ifstream("nestest.nes", std::ios::binary);
-		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);
+		GamePak::loadFromFile("Donkey_Kong.nes");
+		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);	
 		//std::ifstream ROMFile = std::ifstream("Ice Climber (USA, Europe).nes", std::ios::binary);
 		//std::ifstream ROMFile = std::ifstream("BTLCITY.NES", std::ios::binary);
 		char header[16];
@@ -1593,10 +1603,6 @@ inline	u16 ind()
 		ROMFile.read(header, 16);
 		ROMFile.read(PRGROM, 2 * 8192 * header[4]);
 		ROMFile.read(CHRROM, 8192 * header[5]);
-		for (int i = 0; i < 8192 * 2; i++)
-		{
-			memory[i + 0xC000] = PRGROM[i];
-		}
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;
@@ -1697,6 +1703,7 @@ inline	u16 ind()
 			backgroundSprite[i].setTexture(backgroundTexture[i]);
 			backgroundSprite[i].setScale(1.0, 1.0);
 			backgroundSprite[i].setPosition(32 * (i % 16), 32 * (i / 16));
-		}		
+		}	
+		ROMFile.close();
 	}
 }

@@ -9,25 +9,27 @@ namespace PPU
 	sf::Image renderImage;
 	sf::Texture renderTexture;
 	sf::Sprite renderSprite;
-	u8 memory[0x3FFF];
-
+	u8 memory[0x4000];
+	int scanlineCount = 0;
+	int pixelCount = 0;
+	
 	struct PPUCTRL
 	{
 		bool VBlankNMI = 0;
-		bool P = 0;
-		bool H = 0;
-		bool B = 0;
-		bool S = 0;
-		bool I = 0;
+		bool MSSelect = 0;
+		bool spriteSize = 0;
+		bool backgroundPatternTable = 0;
+		bool spritePaternTable = 0;
+		bool VRAMIncrement = 0;
 		bool NX = 0;
 		bool NY = 0;
 	}PPUCTRL;
 
 	struct PPUMASK
 	{
-		bool eBlue = 0;
-		bool eGreen = 0;
-		bool eRed = 0;
+		bool emphasizeBlue = 0;
+		bool emphasizeGreen = 0;
+		bool emphasizeRed = 0;
 		bool showSprites = 0;
 		bool showBackground = 0;
 		bool showSprites8 = 0;
@@ -65,20 +67,20 @@ namespace PPU
 	void writePPUCTRL(u8 data)
 	{
 		PPUCTRL.VBlankNMI = data & 0x80;
-		PPUCTRL.P = data & 0x40;
-		PPUCTRL.H = data & 0x20;
-		PPUCTRL.B = data & 0x10;
-		PPUCTRL.S = data & 0x8;
-		PPUCTRL.I = data & 0x4;
+		PPUCTRL.MSSelect = data & 0x40;
+		PPUCTRL.spriteSize = data & 0x20;
+		PPUCTRL.backgroundPatternTable = data & 0x10;
+		PPUCTRL.spritePaternTable = data & 0x8;
+		PPUCTRL.VRAMIncrement = data & 0x4;
 		PPUCTRL.NX = data & 0x2;
 		PPUCTRL.NY = data & 0x1;
 	}
 
 	void writePPUMASK(u8 data)
 	{
-		PPUMASK.eBlue = data & 0x80;
-		PPUMASK.eGreen = data & 0x40;
-		PPUMASK.eRed = data & 0x20;
+		PPUMASK.emphasizeBlue = data & 0x80;
+		PPUMASK.emphasizeGreen = data & 0x40;
+		PPUMASK.emphasizeRed = data & 0x20;
 		PPUMASK.showSprites = data & 0x10;
 		PPUMASK.showBackground = data & 0x8;
 		PPUMASK.showSprites8 = data & 0x4;
@@ -154,14 +156,7 @@ namespace PPU
 		{
 			memory[PPUADDR] = data;
 		}
-		if (PPUCTRL.I)
-		{
-			PPUADDR += 32;
-		}
-		else
-		{
-			PPUADDR += 1;
-		}
+		PPUADDR += PPUCTRL.VRAMIncrement ? 32 : 1;
 	}
 
 	u8 readPPUDATA()
@@ -172,16 +167,7 @@ namespace PPU
 			buf = memory[PPUADDR];
 		}
 		buf = 0;
-
-		if (PPUCTRL.I)
-		{
-			PPUADDR += 32;
-		}
-		else
-		{
-			PPUADDR += 1;
-		}
-
+		PPUADDR += PPUCTRL.VRAMIncrement ? 32 : 1;
 		return buf;
 	}
 
