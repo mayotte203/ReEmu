@@ -252,22 +252,22 @@ namespace PPU
 		{
 		case 0x180:
 		{
-			renderImage.setPixel(renderX, renderY, sf::Color(255, 255, 255, 255));
+			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13]]);
 			break;
 		}
 		case 0x100:
 		{
-			renderImage.setPixel(renderX, renderY, sf::Color(196, 196, 196, 255));
+			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12]]);
 			break;
 		}
 		case 0x80:
 		{
-			renderImage.setPixel(renderX, renderY, sf::Color(128, 128, 128, 255));
+			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11]]);
 			break;
 		}
 		case 0:
 		{
-			renderImage.setPixel(renderX, renderY, sf::Color(0, 0, 0, 0));
+			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F00]]);
 			break;
 		}
 		}

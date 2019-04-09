@@ -27,6 +27,9 @@
     <ClInclude Include="GamePak.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="ColorsPalette.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPU.cpp">
