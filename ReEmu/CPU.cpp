@@ -1,5 +1,6 @@
 #include "CPU.h"
 #include "PPU.h"
+#include "GamePak.h"
 #include <fstream>
 #include <iostream>
 #include <SFML/Main.hpp>
@@ -45,6 +46,8 @@ namespace CPU
 	u16 programCounter = 0;
 	u8 stackPointer = 0;
 
+	u8 memory[0xFFFF];
+
 	struct statusFlag
 	{
 		bool N = 0;
@@ -77,8 +80,6 @@ namespace CPU
 		statusFlag.Z = state & 0x2;
 		statusFlag.C = state & 0x1;
 	}
-
-	u8 memory[0xFFFF];
 
 	void write(u16 addr, u8 data)
 	{
@@ -215,6 +216,10 @@ namespace CPU
 			}
 			}
 			return 0;
+		}
+		else if (addr > 0x7FFF)
+		{
+			return GamePak::readPRGROM(addr - 0x8000);
 		}
 		return memory[addr];
 	}
@@ -789,6 +794,10 @@ inline	u16 ind()
 		}
 		*/
 		cycles += cycleCount[read(programCounter)];
+		for (int i = 0; i < cycleCount[read(programCounter)]; i++)
+		{
+			PPU::tick();
+		}
 		switch(read(programCounter))
 		{
 		case 0x69:
@@ -1584,23 +1593,19 @@ inline	u16 ind()
 	void init()
 	{
 		//std::ifstream ROMFile = std::ifstream("nestest.nes", std::ios::binary);
-		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);
-		//std::ifstream ROMFile = std::ifstream("Super_Mario_Bros._(E).nes", std::ios::binary);
+		GamePak::loadFromFile("Donkey_Kong.nes");
+		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);	
+		//std::ifstream ROMFile = std::ifstream("Ice Climber (USA, Europe).nes", std::ios::binary);
+		//std::ifstream ROMFile = std::ifstream("BTLCITY.NES", std::ios::binary);
 		char header[16];
 		char PRGROM[8192 * 4];
 		char CHRROM[8192];
 		ROMFile.read(header, 16);
-		ROMFile.read(PRGROM, 8192 * 2);
-		ROMFile.read(CHRROM, 8192);
-		for (int i = 0; i < 8192 * 2; i++)
-		{
-			memory[i + 0xC000] = PRGROM[i];
-		}
+		ROMFile.read(PRGROM, 2 * 8192 * header[4]);
+		ROMFile.read(CHRROM, 8192 * header[5]);
 		stackPointer = 0xFD;
 		setFlags(0x34);
-		//programCounter = 0xC004;
-		programCounter = 0xC79E;
-		//programCounter = 0x8000;
+		programCounter = read(0xFFFC) + read(0xFFFD) * 256;
 		int color;
 		sf::Image patternImage[256];
 		sf::Image patternImages[256];
@@ -1698,7 +1703,7 @@ inline	u16 ind()
 			backgroundSprite[i].setTexture(backgroundTexture[i]);
 			backgroundSprite[i].setScale(1.0, 1.0);
 			backgroundSprite[i].setPosition(32 * (i % 16), 32 * (i / 16));
-		}
-		
+		}	
+		ROMFile.close();
 	}
 }

@@ -17,8 +17,9 @@ int scounter = 0;
 
 int main()
 {
-	sf::RenderWindow window(sf::VideoMode(256, 240), "ReEmu");
+	sf::RenderWindow window(sf::VideoMode(512, 240), "ReEmu");
 	CPU::init();
+	PPU::assignWindow(&window);
 	sf::Event event;
 	while (true)
 	{
@@ -59,7 +60,7 @@ int main()
 				backgroundSprite[i].setPosition(8 * (i % 16), 8 * (i / 16));
 				window.draw(backgroundSprite[i]);
 			}*/
-			
+			PPU::draw();
 			window.display();
 			scounter = false;
 

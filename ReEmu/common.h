@@ -8,3 +8,6 @@ typedef uint32_t u32; typedef int32_t s32;
 typedef uint64_t u64; typedef int64_t s64;
 
 /* https://github.com/AndreaOrru/LaiNES/blob/master/src/include/common.hpp */
+
+#define HORIZONTAL false
+#define VERTICAL true

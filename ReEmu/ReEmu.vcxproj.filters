@@ -24,6 +24,12 @@
     <ClInclude Include="PPU.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="GamePak.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="ColorsPalette.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPU.cpp">
@@ -33,6 +39,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="PPU.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePak.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
