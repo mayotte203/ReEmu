@@ -246,8 +246,8 @@ namespace PPU
 		}
 		int xOffset = renderX - OAM[4 * currentSprite + 3];
 		int yOffset = renderY - OAM[4 * currentSprite];
-		int color = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + yOffset) << xOffset) & 0x80)
-			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + yOffset + 8) << xOffset) & 0x80);
+		int color = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80)
+			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) + 8) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80);
 		switch (color)
 		{
 		case 0x180:
