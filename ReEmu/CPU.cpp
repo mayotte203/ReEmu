@@ -1593,9 +1593,11 @@ inline	u16 ind()
 	void init()
 	{
 		//std::ifstream ROMFile = std::ifstream("nestest.nes", std::ios::binary);
+		//GamePak::loadFromFile("nestest.nes");
 		GamePak::loadFromFile("Donkey_Kong.nes");
 		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);	
 		//std::ifstream ROMFile = std::ifstream("Ice Climber (USA, Europe).nes", std::ios::binary);
+		//GamePak::loadFromFile("BTLCITY.NES");
 		//std::ifstream ROMFile = std::ifstream("BTLCITY.NES", std::ios::binary);
 		char header[16];
 		char PRGROM[8192 * 4];
