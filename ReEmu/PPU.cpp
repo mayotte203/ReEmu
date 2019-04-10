@@ -254,23 +254,17 @@ namespace PPU
 			{
 			case 0x180:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400
-					+ (currentBackgroundSprite / 32) * 8
-					+ (currentBackgroundSprite % 16) / 2] >> ((2 * ((currentBackgroundSprite % 32) / 16)) + (currentBackgroundSprite % 2))) & 0x03) * 4  + 0x3F03]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F03]]);
 				break;
 			}
 			case 0x100:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400
-					+ (currentBackgroundSprite / 32) * 8
-					+ (currentBackgroundSprite % 16) / 2] >> ((2 * ((currentBackgroundSprite % 32) / 16)) + (currentBackgroundSprite % 2))) & 0x03) * 4 + 0x3F02]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F02]]);
 				break;
 			}
 			case 0x80:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + (currentNametable * 0x400)
-					+ ((currentBackgroundSprite / 32) * 8)
-					+ ((currentBackgroundSprite % 16) / 2)] >> ((2 * ((currentBackgroundSprite % 32) / 16)) + (currentBackgroundSprite % 2))) & 0x03) * 4 + 0x3F01]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F01]]);
 				break;
 			}
 			case 0:
