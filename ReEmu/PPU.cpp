@@ -3,6 +3,9 @@
 u8 OAM[0x100];
 namespace PPU
 {
+	const static u8 backgroundAttribute[960] = {
+
+	};
 	bool mirroring = true;
 	sf::RenderWindow *renderWindow;
 	u8 spriteData[256];
