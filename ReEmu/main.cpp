@@ -54,7 +54,6 @@ int main()
 
 	HWND Window = CreateWindow("SFML App", "SFML Win32", WS_SYSMENU | WS_VISIBLE, 0, 0, 600, 300, NULL, NULL, GetModuleHandle(NULL), NULL);
 
-	// Let's create two SFML views
 	DWORD Style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
 	HWND  View1 = CreateWindow("STATIC", NULL, Style, 0, 0, 512, 240, Window, NULL, GetModuleHandle(NULL), NULL);
 
