@@ -28,8 +28,8 @@ namespace PPU
 		bool backgroundPatternTable = 0;
 		bool spritePaternTable = 0;
 		bool VRAMIncrement = 0;
-		bool NX = 0;
 		bool NY = 0;
+		bool NX = 0;
 	}PPUCTRL;
 
 	struct PPUMASK
@@ -79,8 +79,8 @@ namespace PPU
 		PPUCTRL.backgroundPatternTable = data & 0x10;
 		PPUCTRL.spritePaternTable = data & 0x8;
 		PPUCTRL.VRAMIncrement = data & 0x4;
-		PPUCTRL.NX = data & 0x2;
-		PPUCTRL.NY = data & 0x1;
+		PPUCTRL.NY = data & 0x2;
+		PPUCTRL.NX = data & 0x1;
 	}
 
 	void writePPUMASK(u8 data)
@@ -234,13 +234,13 @@ namespace PPU
 
 	void pixel()
 	{
-		int backgorundX = (PPUCTRL.NX * 256 + PPUSCROLLX + renderX) % 512;
+		int backgroundX = (PPUCTRL.NX * 256 + PPUSCROLLX + renderX) % 512;
 		int backgroundY = (PPUCTRL.NY * 240 + PPUSCROLLY + renderY) % 480;
-		int backgroundXOffset = backgorundX % 8;
+		int backgroundXOffset = backgroundX % 8;
 		int backgroundYOffset = backgroundY % 8;
-		int currentNametable = mirroring == HORIZONTAL ? (((backgorundX / 256) + 2 * (backgroundY / 240)) / 2) : (((backgorundX / 256) + 2 * (backgroundY / 240)) % 2);
-		int currentNametableEnter = (backgorundX / 8) + ((backgroundY / 8) * 32);
-		int currentBackgroundSprite = memory[0x2000 + currentNametable * 0x400 + (backgorundX / 8) + ((backgroundY / 8) * 32)];
+		int currentNametable = mirroring == VERTICAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
+		int currentNametableEnter = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
+		int currentBackgroundSprite = memory[0x2000 + currentNametable * 0x400 + currentNametableEnter];
 		int colorBackground = ((GamePak::readCHRROM(16 * currentBackgroundSprite + backgroundYOffset + 0x1000) << backgroundXOffset) & 0x80)
 			+ 2 * ((GamePak::readCHRROM(16 * currentBackgroundSprite + backgroundYOffset + 8 + 0x1000) << backgroundXOffset) & 0x80);
 		int currentSprite = -1;
