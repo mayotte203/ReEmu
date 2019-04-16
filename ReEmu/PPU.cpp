@@ -257,17 +257,17 @@ namespace PPU
 			{
 			case 0x180:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F03]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >>  (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F03]]);
 				break;
 			}
 			case 0x100:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F02]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >> (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F02]]);
 				break;
 			}
 			case 0x80:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F01]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >> (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F01]]);
 				break;
 			}
 			case 0:
@@ -303,26 +303,29 @@ namespace PPU
 		{
 			switch (colorBackground)
 			{
-			case 0x180:
-			{
-				renderImage.setPixel(renderX, renderY, sf::Color(255, 255, 255, 255));
-				break;
-			}
-			case 0x100:
-			{
-				renderImage.setPixel(renderX, renderY, sf::Color(192, 192, 192, 255));
-				break;
-			}
-			case 0x80:
-			{
-				renderImage.setPixel(renderX, renderY, sf::Color(128, 128, 128, 255));
-				break;
-			}
-			case 0:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F00]]);
-				break;
-			}
+				switch (colorBackground)
+				{
+				case 0x180:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >> (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F03]]);
+					break;
+				}
+				case 0x100:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >> (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F02]]);
+					break;
+				}
+				case 0x80:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(memory[0x23C0 + currentNametable * 0x400 + ((((currentBackgroundSprite) / 128) * 8) + (((currentBackgroundSprite % 32) / 4)))] >> (2 * ((((currentBackgroundSprite) % 4) / 2) + 2 * (((currentBackgroundSprite) / 32) % 2)))) & 0x3 + 0x3F01]]);
+					break;
+				}
+				case 0:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F00]]);
+					break;
+				}
+				}
 			break;
 			}
 		}
