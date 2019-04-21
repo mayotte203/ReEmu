@@ -3,6 +3,7 @@
 #include "GamePak.h"
 #include <fstream>
 #include <iostream>
+#include "APU.h"
 #include <SFML/Main.hpp>
 sf::Sprite patternSprite[256];
 
@@ -162,6 +163,7 @@ namespace CPU
 					joystate2 = joystate;
 				}
 				strobe = data & 0x1;
+				break;
 			}
 			}
 		}
@@ -1592,20 +1594,25 @@ inline	u16 ind()
 
 	void init()
 	{
+		APU::init();
 		//std::ifstream ROMFile = std::ifstream("Super_Mario_Bros._(E).nes", std::ios::binary);
 		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
-		//GamePak::loadFromFile("Donkey_Kong.nes");
-		//std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);	
+		GamePak::loadFromFile("Donkey_Kong.nes");
+		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);
+		//GamePak::loadFromFile("color_test.nes");
+		//std::ifstream ROMFile = std::ifstream("color_test.nes", std::ios::binary);
+		//GamePak::loadFromFile("Arkanoid (U).nes");
+		//std::ifstream ROMFile = std::ifstream("Arkanoid (U).nes", std::ios::binary);
 		//std::ifstream ROMFile = std::ifstream("Ice Climber (USA, Europe).nes", std::ios::binary);
 		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
-		GamePak::loadFromFile("battle-city.nes");
-		std::ifstream ROMFile = std::ifstream("battle-city.nes", std::ios::binary);
+		//GamePak::loadFromFile("battle-city.nes");
+		//std::ifstream ROMFile = std::ifstream("battle-city.nes", std::ios::binary);
 		char header[16];
 		char PRGROM[8192 * 4];
 		char CHRROM[8192];
 		ROMFile.read(header, 16);
 		ROMFile.read(PRGROM, 2 * 8192 * header[4]);
-		ROMFile.read(CHRROM, 8192 * header[5]);
+		ROMFile.read(CHRROM, 8192);
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;

@@ -192,7 +192,8 @@ namespace PPU
 		renderImage.create(256, 240, sf::Color::Red);
 		renderTexture.loadFromImage(renderImage);
 		renderSprite.setTexture(renderTexture);
-		renderSprite.setPosition(sf::Vector2f(256.0, 0.0));
+		renderSprite.setScale(2.0, 2.0);
+		renderSprite.setPosition(sf::Vector2f(0.0, 0.0));
 	}
 
 	void tick()

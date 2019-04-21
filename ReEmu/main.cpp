@@ -52,10 +52,9 @@ int main()
 	WindowClass.lpszClassName = "SFML App";
 	RegisterClass(&WindowClass);
 
-	HWND Window = CreateWindow("SFML App", "SFML Win32", WS_SYSMENU | WS_VISIBLE, 0, 0, 600, 300, NULL, NULL, GetModuleHandle(NULL), NULL);
-
+	HWND Window = CreateWindow("SFML App", "SFML Win32", WS_SYSMENU | WS_VISIBLE, 0, 0, 640, 520, NULL, NULL, GetModuleHandle(NULL), NULL);
 	DWORD Style = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
-	HWND  View1 = CreateWindow("STATIC", NULL, Style, 0, 0, 512, 240, Window, NULL, GetModuleHandle(NULL), NULL);
+	HWND  View1 = CreateWindow("STATIC", NULL, Style, 0, 0, 512, 480, Window, NULL, GetModuleHandle(NULL), NULL);
 
 	sf::RenderWindow window(View1);
 	CPU::init();
@@ -84,34 +83,6 @@ int main()
 				if (event.type == sf::Event::Closed)
 					window.close();
 				window.clear();
-				for (int i = 0; i < 960; i++)
-				{
-					u8 spriteNumber = PPU::read(0x2000 + i);
-					int x = 8 * (i % 32);
-					int y = 8 * (int)(i / 32);
-					backgroundSprite[spriteNumber].setPosition(x, y);
-					window.draw(backgroundSprite[spriteNumber]);
-				}
-
-				for (int i = 0; i < 64; i++)
-				{
-					if (OAM[4 * i + 2] & 0x40)
-					{
-						patternSprite[OAM[4 * i + 1]].setScale(-1.0f, 1.0f);
-						patternSprite[OAM[4 * i + 1]].setPosition(OAM[4 * i + 3] + 8, OAM[4 * i]);
-					}
-					else
-					{
-						patternSprite[OAM[4 * i + 1]].setScale(1.0f, 1.0f);
-						patternSprite[OAM[4 * i + 1]].setPosition(OAM[4 * i + 3], OAM[4 * i]);
-					}
-					window.draw(patternSprite[OAM[4 * i + 1]]);
-				}
-				/*for (int i = 0; i < 256; i++)
-				{
-					backgroundSprite[i].setPosition(8 * (i % 16), 8 * (i / 16));
-					window.draw(backgroundSprite[i]);
-				}*/
 				PPU::draw();
 				window.display();
 				scounter = false;
