@@ -1,5 +1,5 @@
 #include "PPU.h"
-
+#include "CPU.h"
 u8 OAM[0x100];
 namespace PPU
 {
@@ -215,6 +215,14 @@ namespace PPU
 				}
 			}
 		}
+		else if (scanlineCount == 241 && cycleCount == 0)
+		{
+			setvstat(true);
+			if (PPUCTRL.VBlankNMI)
+			{
+				CPU::handleNMI();
+			}
+		}
 		cycleCount++;
 		if (cycleCount == 341)
 		{
@@ -223,6 +231,7 @@ namespace PPU
 			if (scanlineCount == 261)
 			{
 				scanlineCount = 0;
+				setvstat(false);
 			}
 		}
 	}
@@ -239,7 +248,7 @@ namespace PPU
 		int backgroundY = (PPUCTRL.NY * 240 + PPUSCROLLY + renderY) % 480;
 		int backgroundXOffset = backgroundX % 8;
 		int backgroundYOffset = backgroundY % 8;
-		int currentNametable = mirroring == VERTICAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
+		int currentNametable = mirroring == HORIZONTAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
 		int currentNametableEnter = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
 		int currentBackgroundSprite = memory[0x2000 + currentNametable * 0x400 + currentNametableEnter];
 		int colorBackground = ((GamePak::readCHRROM(16 * currentBackgroundSprite + backgroundYOffset + 0x1000) << backgroundXOffset) & 0x80)

@@ -19,8 +19,7 @@ namespace CPU
 	u8 currentkey = 0;
 	u8 joystate = 0;
 	u8 joystate2 = 0;
-	bool VBNMI = true;
-	int cycles = 0;
+	bool VBNMI = true; //Allow vertical blank NMI
 	u8 cycleCount[256] =
 	{
 		//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -41,6 +40,7 @@ namespace CPU
 			2, 6, 0, 0, 3, 5, 0, 0, 2, 2, 2, 0, 4, 4, 6, 0, //E
 			2, 5, 0, 0, 0, 6, 0, 0, 2, 4, 0, 0, 0, 4, 7, 0, //F
 	};
+	//Registers
 	u8 accRegister = 0;
 	u8 xRegister = 0;
 	u8 yRegister = 0;
@@ -757,49 +757,10 @@ inline	u16 ind()
 		JSR(read(0xFFFA) + read(0xFFFB) * 256 + 1);
 		PHP();
 	}
-	bool NMI = false;
-	bool sprite = false;
+
 	void op()
 	{
-		//int Word = 128 * statusFlag.N + 64 * statusFlag.V + 32 + 16 * statusFlag.B + 8 * statusFlag.D + 4 * statusFlag.I + 2 * statusFlag.Z + 1 * statusFlag.C;
-		//std::cout << std::uppercase << std::hex << programCounter << " " << (int)read(programCounter) << " " << (int)read(programCounter + 1) << " " << (int)read(programCounter + 2) << " " << (int)(read(stackPointer + 0x100 + 0x1) + read(stackPointer + 0x100 + 0x2) * 256) << "    " << (int)accRegister << " " << (int)xRegister << " " << (int)yRegister << " " << Word << " " << (int)stackPointer << std::endl;
-		/*
-		fileo << std::uppercase << std::hex << programCounter << " A:";
-		if (accRegister < 0x10)
-		{
-			fileo << "0";
-		}
-		fileo << (int)accRegister << " X:";
-		if (xRegister < 0x10)
-		{
-			fileo << "0";
-		}
-		fileo << (int)xRegister << " Y:";
-		if (yRegister < 0x10)
-		{
-			fileo << "0";
-		}
-		fileo << (int)yRegister << " P:";
-		if (Word < 0x10)
-		{
-			fileo << "0";
-		}
-		fileo << Word << " SP:";
-		if (stackPointer < 0x10)
-		{
-			fileo << "0";
-		}
-		fileo << (int)stackPointer << std::endl;
-		if (programCounter == 0xC6BC)
-		{
-			fileo.close();
-		}
-		*/
-		cycles += cycleCount[read(programCounter)];
-		for (int i = 0; i < cycleCount[read(programCounter)]; i++)
-		{
-			PPU::tick();
-		}
+		int cycleBuf = cycleCount[read(programCounter)];	
 		switch(read(programCounter))
 		{
 		case 0x69:
@@ -1559,161 +1520,23 @@ inline	u16 ind()
 		}
 		}
 		programCounter++;
-		if ((cycles * 3) > 341 * 300)
+		for (int i = 0; i < 3 * cycleBuf; i++)
 		{
-			PPU::setvstat(false);
-			PPU::setsprite(false);
-			cycles = 0;
-			NMI = false;
-			sprite = false;
+			PPU::tick();
 		}
-		else
-		if ((cycles * 3) > 341 * 250)
-		{
-				if (!NMI)
-				{
-					PPU::setvstat(true);
-					if (VBNMI)
-					{
-						handleNMI();
-					}
-					NMI = true;
-				}
-		}
-		else
-		if ((cycles * 3) > 341 * 20)
-		{
-			if (!sprite)
-			{
-				PPU::setsprite(true);
-				sprite = true;
-			}
-		}
-
 	}
 
 	void init()
 	{
 		APU::init();
-		//std::ifstream ROMFile = std::ifstream("Super_Mario_Bros._(E).nes", std::ios::binary);
 		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
-		GamePak::loadFromFile("Donkey_Kong.nes");
-		std::ifstream ROMFile = std::ifstream("Donkey_Kong.nes", std::ios::binary);
+		//GamePak::loadFromFile("Donkey_Kong.nes");
 		//GamePak::loadFromFile("color_test.nes");
-		//std::ifstream ROMFile = std::ifstream("color_test.nes", std::ios::binary);
 		//GamePak::loadFromFile("Arkanoid (U).nes");
-		//std::ifstream ROMFile = std::ifstream("Arkanoid (U).nes", std::ios::binary);
-		//std::ifstream ROMFile = std::ifstream("Ice Climber (USA, Europe).nes", std::ios::binary);
 		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
-		//GamePak::loadFromFile("battle-city.nes");
-		//std::ifstream ROMFile = std::ifstream("battle-city.nes", std::ios::binary);
-		char header[16];
-		char PRGROM[8192 * 4];
-		char CHRROM[8192];
-		ROMFile.read(header, 16);
-		ROMFile.read(PRGROM, 2 * 8192 * header[4]);
-		ROMFile.read(CHRROM, 8192);
+		GamePak::loadFromFile("battle-city.nes");
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;
-		int color;
-		sf::Image patternImage[256];
-		sf::Image patternImages[256];
-		for (int i = 0; i < 256; i++)
-		{
-			patternImages[i].create(8, 8, sf::Color(255, 255, 255, 255));
-			patternImage[i].create(8, 8, sf::Color(255, 255, 255, 255));
-		}
-		for (int l = 0; l < 16; l++)
-		{
-			for (int i = 0; i < 16; i++)
-			{
-				for (int k = 0; k < 8; k++)
-				{
-					for (int j = 0; j < 8; j++)
-					{
-						color = (CHRROM[l * 256 + i * 16 + k] & 1) + 2 * (CHRROM[l * 256 + i * 16 + k + 8] & 1);
-						CHRROM[l * 256 + i * 16 + k] = CHRROM[l * 256 + i * 2 * 8 + k] >> 1;
-						CHRROM[l * 256 + i * 16 + k + 8] = CHRROM[l * 256 + i * 2 * 8 + k + 8] >> 1;
-						switch (color)
-						{
-						case 3:
-						{
-							patternImages[i + l * 16].setPixel(7 - j, k, sf::Color(255, 255, 255, 255));
-							break;
-						}
-						case 2:
-						{
-							patternImages[i + l * 16].setPixel(7 - j, k, sf::Color(196, 196, 196, 255));
-							break;
-						}
-						case 1:
-						{
-							patternImages[i + l * 16].setPixel(7 - j, k, sf::Color(128, 128, 128, 255));
-							break;
-						}
-						case 0:
-						{
-							patternImages[i + l * 16].setPixel(7 - j, k, sf::Color(0, 0, 0, 0));
-							break;
-						}
-						}
-					}
-				}
-			}
-		}
-		for (int i = 0; i < 256; i++)
-		{
-			patternTexture[i].loadFromImage(patternImages[i]);
-			patternSprite[i].setTexture(patternTexture[i]);
-			patternSprite[i].setScale(1.0, 1.0);
-			patternSprite[i].setPosition(32 * (i % 16),32* ( i / 16));
-		}
-		for (int l = 0; l < 16; l++)
-		{
-			for (int i = 0; i < 16; i++)
-			{
-				for (int k = 0; k < 8; k++)
-				{
-					for (int j = 0; j < 8; j++)
-					{
-						color = (CHRROM[l * 256 + i * 16 + k + 0x1000] & 1) + 2 * (CHRROM[l * 256 + i * 16 + k + 8 + 0x1000] & 1);
-						CHRROM[l * 256 + i * 16 + k + 0x1000] = CHRROM[l * 256 + i * 2 * 8 + k + 0x1000] >> 1;
-						CHRROM[l * 256 + i * 16 + k + 8 + 0x1000] = CHRROM[l * 256 + i * 2 * 8 + k + 8 + 0x1000] >> 1;
-						switch (color)
-						{
-						case 3:
-						{
-							patternImage[i + l * 16].setPixel(7 - j, k, sf::Color(255, 255, 255, 255));
-							break;
-						}
-						case 2:
-						{
-							patternImage[i + l * 16].setPixel(7 - j, k, sf::Color(196, 196, 196, 255));
-							break;
-						}
-						case 1:
-						{
-							patternImage[i + l * 16].setPixel(7 - j, k, sf::Color(128, 128, 128, 255));
-							break;
-						}
-						case 0:
-						{
-							patternImage[i + l * 16].setPixel(7 - j, k, sf::Color(0, 0, 0, 255));
-							break;
-						}
-						}
-					}
-				}
-			}
-		}
-		for (int i = 0; i < 256; i++)
-		{
-			backgroundTexture[i].loadFromImage(patternImage[i]);
-			backgroundSprite[i].setTexture(backgroundTexture[i]);
-			backgroundSprite[i].setScale(1.0, 1.0);
-			backgroundSprite[i].setPosition(32 * (i % 16), 32 * (i / 16));
-		}	
-		ROMFile.close();
 	}
 }

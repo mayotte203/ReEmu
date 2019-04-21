@@ -63,5 +63,4 @@ namespace APU
 		triangleChannelSound.setBuffer(triangleChannelBuffer);
 		triangleChannelSound.setLoop(true);
 	}
-
 }
