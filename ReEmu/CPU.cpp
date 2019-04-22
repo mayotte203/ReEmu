@@ -1534,7 +1534,8 @@ inline	u16 ind()
 		//GamePak::loadFromFile("color_test.nes");
 		//GamePak::loadFromFile("Arkanoid (U).nes");
 		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
-		GamePak::loadFromFile("battle-city.nes");
+	    GamePak::loadFromFile("battle-city.nes");
+		//GamePak::loadFromFile("Pac - Man(USA) (Namco).nes");
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;

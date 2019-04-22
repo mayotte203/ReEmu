@@ -14,6 +14,8 @@ namespace PPU
 	sf::Texture renderTexture;
 	sf::Sprite renderSprite;
 	u8 memory[0x4000];
+	sf::Color currentScanlineRender[263]; //256 + 7
+	int spriteFetch[8];
 	int scanlineCount = 0;
 	int cycleCount = 0;
 	int renderX = 0;
@@ -196,10 +198,85 @@ namespace PPU
 		renderSprite.setPosition(sf::Vector2f(0.0, 0.0));
 	}
 
+	void fetchSprites()
+	{
+		int i = 0;
+		int j = 0;
+		while (i < 64 && j < 8)
+		{
+			if (OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
+			{
+				spriteFetch[j] = i;
+				j++;
+			}
+			i++;
+		}
+	}
+
+	void renderScanline()
+	{
+		int spriteRenderBuffer[8];
+		for (int i = 8; i--; i > -1)
+		{
+			int yOffset = renderY - OAM[4 * spriteFetch[i]];
+			spriteRenderBuffer[0] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 7 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 7 & 0x1));
+			spriteRenderBuffer[1] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 6 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 6 & 0x1));
+			spriteRenderBuffer[2] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 5 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 5 & 0x1));
+			spriteRenderBuffer[3] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 4 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 4 & 0x1));
+			spriteRenderBuffer[4] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 3 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 3 & 0x1));
+			spriteRenderBuffer[5] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 2 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 2 & 0x1));
+			spriteRenderBuffer[6] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 1 & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 1 & 0x1));
+			spriteRenderBuffer[7] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) & 0x1
+				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) & 0x1));
+			for (int j = 0; j < 8; j++)
+			{
+				switch (spriteRenderBuffer[j])
+				{
+				case 3:
+				{
+					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(255.0,255.0,255.0,255.0);
+					break;
+				}
+				case 2:
+				{
+					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(192.0, 192.0, 192.0, 255.0);
+					break;
+				}
+				case 1:
+				{
+					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(128.0, 128.0, 128.0, 255.0);
+					break;
+				}
+				case 0:
+				{
+					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(0.0, 0.0, 0.0, 255.0);
+					break;
+				}
+				}
+			}
+		}
+	}
+	void clearScanline()
+	{
+		for (int i = 0; i < 256; i++)
+		{
+			currentScanlineRender[i] = sf::Color::Black;
+		}
+	}
 	void tick()
 	{
 		if (scanlineCount > 0 && scanlineCount < 241)
 		{
+			if (cycleCount == 0)
+			{
+			}
 			if (cycleCount > 0 && cycleCount < 257)
 			{
 				pixel();
@@ -238,9 +315,11 @@ namespace PPU
 
 	void draw()
 	{
-		renderTexture.loadFromImage(renderImage);
+		renderTexture.update(renderImage);
 		renderWindow->draw(renderSprite);
 	}
+
+	
 
 	void pixel()
 	{
@@ -293,6 +372,7 @@ namespace PPU
 		int yOffset = renderY - OAM[4 * currentSprite];
 		int colorSprite = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80)
 			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) + 8) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80);
+		//renderImage.setPixel(renderX, renderY, currentScanlineRender[renderX]);
 		switch (colorSprite)
 		{
 		case 0x180:
