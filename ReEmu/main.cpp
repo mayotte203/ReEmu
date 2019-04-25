@@ -7,12 +7,9 @@
 #include "CPU.h"
 #include "PPU.h"
 #include "common.h"
-#include <dshow.h>
+#include <Windows.h>
 using namespace std;
 
-extern u8 OAM[0x100];
-extern sf::Sprite patternSprite[256];
-extern sf::Sprite backgroundSprite[256];
 int scounter = 0;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message,
