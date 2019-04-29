@@ -1534,8 +1534,8 @@ inline	u16 ind()
 		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
 		//GamePak::loadFromFile("Donkey_Kong.nes");
 		//GamePak::loadFromFile("color_test.nes");
-		//GamePak::loadFromFile("Arkanoid (U).nes");
-		GamePak::loadFromFile("Tetris (USA).nes");
+		GamePak::loadFromFile("Arkanoid (U).nes");
+		//GamePak::loadFromFile("Tetris (USA).nes");
 		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
 	    //GamePak::loadFromFile("battle-city.nes");
 		//GamePak::loadFromFile("Pac - Man(USA) (Namco).nes");

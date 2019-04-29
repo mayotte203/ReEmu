@@ -141,6 +141,7 @@
     <ClInclude Include="emulator.h" />
     <ClInclude Include="GamePak.h" />
     <ClInclude Include="APU.h" />
+    <ClInclude Include="GUI.h" />
     <ClInclude Include="PPU.h" />
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +149,7 @@
     <ClCompile Include="CPU.cpp" />
     <ClCompile Include="emulator.cpp" />
     <ClCompile Include="GamePak.cpp" />
+    <ClCompile Include="GUI.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PPU.cpp" />
   </ItemGroup>
