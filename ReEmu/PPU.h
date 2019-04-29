@@ -10,7 +10,7 @@ namespace PPU
 {
 	void write(u16 addr, u8 data);
 	u8 read(u16 addr);
-	void setvstat(bool data);
+	void setVStat(bool data);
 	void writePPUCTRL(u8 data);
 	void writePPUMASK(u8 data);
 	u8 readPPUSTATUS();
@@ -27,4 +27,5 @@ namespace PPU
 	void tick();
 	void assignWindow(sf::RenderWindow *window);
 	void draw();
+	bool getVStat();
 }

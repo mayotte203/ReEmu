@@ -1520,8 +1520,10 @@ inline	u16 ind()
 		}
 		}
 		programCounter++;
-		for (int i = 0; i < 3 * cycleBuf; i++)
+		for (int i = 0; i < cycleBuf; i++)
 		{
+			PPU::tick();
+			PPU::tick();
 			PPU::tick();
 		}
 	}
@@ -1532,9 +1534,9 @@ inline	u16 ind()
 		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
 		//GamePak::loadFromFile("Donkey_Kong.nes");
 		//GamePak::loadFromFile("color_test.nes");
-		//GamePak::loadFromFile("Arkanoid (U).nes");
+		GamePak::loadFromFile("Arkanoid (U).nes");
 		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
-	    GamePak::loadFromFile("battle-city.nes");
+	    //GamePak::loadFromFile("battle-city.nes");
 		//GamePak::loadFromFile("Pac - Man(USA) (Namco).nes");
 		stackPointer = 0xFD;
 		setFlags(0x34);

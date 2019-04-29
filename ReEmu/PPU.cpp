@@ -151,14 +151,21 @@ namespace PPU
 		writeLatch = !writeLatch;
 	}
 
-	void setvstat(bool data)
+	void setVStat(bool data)
 	{
 		PPUSTATUS.VBlank = data;
 	}
+
+	bool getVStat()
+	{
+		return  PPUSTATUS.VBlank;
+	}
+
 	void setsprite(bool data)
 	{
 		PPUSTATUS.sprite0 = data;
 	}
+
 	void writePPUDATA(u8 data)
 	{
 		if (PPUADDR < 0x4000)
@@ -213,69 +220,17 @@ namespace PPU
 		}
 	}
 
-	void renderScanline()
-	{
-		int spriteRenderBuffer[8];
-		for (int i = 8; i--; i > -1)
-		{
-			int yOffset = renderY - OAM[4 * spriteFetch[i]];
-			spriteRenderBuffer[0] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 7 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 7 & 0x1));
-			spriteRenderBuffer[1] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 6 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 6 & 0x1));
-			spriteRenderBuffer[2] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 5 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 5 & 0x1));
-			spriteRenderBuffer[3] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 4 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 4 & 0x1));
-			spriteRenderBuffer[4] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 3 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 3 & 0x1));
-			spriteRenderBuffer[5] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 2 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 2 & 0x1));
-			spriteRenderBuffer[6] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) >> 1 & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) >> 1 & 0x1));
-			spriteRenderBuffer[7] = (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset) & 0x1
-				+ 2 * (GamePak::readCHRROM(0x10 * spriteFetch[i] + yOffset + 0x08) & 0x1));
-			for (int j = 0; j < 8; j++)
-			{
-				switch (spriteRenderBuffer[j])
-				{
-				case 3:
-				{
-					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(255.0,255.0,255.0,255.0);
-					break;
-				}
-				case 2:
-				{
-					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(192.0, 192.0, 192.0, 255.0);
-					break;
-				}
-				case 1:
-				{
-					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(128.0, 128.0, 128.0, 255.0);
-					break;
-				}
-				case 0:
-				{
-					currentScanlineRender[OAM[4 * spriteFetch[i]] + j] = sf::Color(0.0, 0.0, 0.0, 255.0);
-					break;
-				}
-				}
-			}
-		}
-	}
-	void clearScanline()
-	{
-		for (int i = 0; i < 256; i++)
-		{
-			currentScanlineRender[i] = sf::Color::Black;
-		}
-	}
 	void tick()
 	{
+		if (scanlineCount == 0)
+		{
+			renderY = 0;
+		}
 		if (scanlineCount > 0 && scanlineCount < 241)
 		{
 			if (cycleCount == 0)
 			{
+				renderX = 0;
 			}
 			if (cycleCount > 0 && cycleCount < 257)
 			{
@@ -294,7 +249,7 @@ namespace PPU
 		}
 		else if (scanlineCount == 241 && cycleCount == 0)
 		{
-			setvstat(true);
+			setVStat(true);
 			if (PPUCTRL.VBlankNMI)
 			{
 				CPU::handleNMI();
@@ -308,18 +263,17 @@ namespace PPU
 			if (scanlineCount == 261)
 			{
 				scanlineCount = 0;
-				setvstat(false);
+				renderTexture.update(renderImage);
+				setVStat(false);
 			}
 		}
 	}
 
 	void draw()
 	{
-		renderTexture.update(renderImage);
 		renderWindow->draw(renderSprite);
 	}
 
-	
 
 	void pixel()
 	{
