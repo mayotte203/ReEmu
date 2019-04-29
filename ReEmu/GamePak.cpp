@@ -9,7 +9,7 @@ namespace GamePak
 	bool mirroringIgnore = false;
 	u8 mapper = 0;
 	char PRGROM[8192 * 4];
-	char CHRROM[8192];
+	char CHRROM[8192 * 2];
 
 	u8 readCHRROM(u16 addr)
 	{

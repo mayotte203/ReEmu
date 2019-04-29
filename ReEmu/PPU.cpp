@@ -14,7 +14,6 @@ namespace PPU
 	sf::Texture renderTexture;
 	sf::Sprite renderSprite;
 	u8 memory[0x4000];
-	sf::Color currentScanlineRender[263]; //256 + 7
 	int spriteFetch[8];
 	int scanlineCount = 0;
 	int cycleCount = 0;
@@ -226,7 +225,7 @@ namespace PPU
 		{
 			renderY = 0;
 		}
-		if (scanlineCount > 0 && scanlineCount < 241)
+		else if (scanlineCount > 0 && scanlineCount < 241)
 		{
 			if (cycleCount == 0)
 			{
