@@ -32,14 +32,31 @@ namespace GUI
 
 	void start()
 	{
-		read_directory("./roms");
-		system("pause");
+		sf::Font font;
+		font.loadFromFile("font.ttf");
 		sf::RenderWindow window(sf::VideoMode(512, 480), "ReEmu");
 		CPU::init();
 		PPU::assignWindow(&window);
 		sf::Event event;
 		sf::Clock clock;
 		sf::Time elapsed;
+		sf::Text text;
+		text.setFont(font);
+		text.setString("Kal");
+		text.setPosition(250.0, 300.0);
+		text.setCharacterSize(24);
+		while (window.isOpen())
+		{
+			sf::Event event;
+			while (window.pollEvent(event))
+			{
+				if (event.type == sf::Event::Closed)
+					window.close();
+			}
+			window.clear();
+			window.draw(text);
+			window.display();
+		}
 		bool isVBlankOccured = false;
 		while (window.isOpen())
 		{

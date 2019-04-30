@@ -273,6 +273,10 @@ namespace PPU
 		renderWindow->draw(renderSprite);
 	}
 
+	sf::Sprite* getRenderSprite()
+	{
+		return &renderSprite;
+	}
 
 	void pixel()
 	{
