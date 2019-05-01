@@ -25,7 +25,8 @@ namespace PPU
 	void OAMDMA(u8 data[0x100]);
 	void setsprite(bool data);
 	void tick();
-	void assignWindow(sf::RenderWindow *window);
-	void draw();
+	void init();
+	bool isVBlankOccured();
 	bool getVStat();
+	sf::Sprite* getRenderSprite();
 }

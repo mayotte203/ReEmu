@@ -1,25 +1,27 @@
 #include "PPU.h"
 #include "CPU.h"
-u8 OAM[0x100];
 namespace PPU
 {
-	const static u8 backgroundAttribute[960] = {
-
-	};
-	bool mirroring = true;
+	bool VBlankOccured = false;
+	bool mirroring = VERTICAL;
+	bool writeLatch = 0;
 	sf::RenderWindow *renderWindow;
-	u8 spriteData[256];
-	u8 renderBuffer[240][256];
 	sf::Image renderImage;
 	sf::Texture renderTexture;
 	sf::Sprite renderSprite;
 	u8 memory[0x4000];
+	u8 OAM[0x100];
+	u8 spriteData[256];
+	u8 renderBuffer[240][256];
 	int spriteFetch[8];
 	int scanlineCount = 0;
 	int cycleCount = 0;
 	int renderX = 0;
 	int renderY = 0;
-	void pixel();
+	u8 OAMADDR = 0;
+	u8 PPUSCROLLX = 0;
+	u8 PPUSCROLLY = 0;
+	u16 PPUADDR = 0;
 
 	struct PPUCTRL
 	{
@@ -52,11 +54,14 @@ namespace PPU
 		bool spriteOverflow = 0;
 	}PPUSTATUS;
 	
-	u8 OAMADDR = 0;
-	u8 PPUSCROLLX = 0;
-	u8 PPUSCROLLY = 0;
-	u16 PPUADDR = 0;
-	bool writeLatch = 0;
+	void pixel();
+
+	bool isVBlankOccured() 
+	{
+		bool oldVBlank = VBlankOccured;
+		VBlankOccured = false;
+		return oldVBlank;
+	}
 
 	void write(u16 addr, u8 data)
 	{
@@ -194,16 +199,6 @@ namespace PPU
 		}
 	}
 
-	void assignWindow(sf::RenderWindow *window)
-	{
-		renderWindow = window;
-		renderImage.create(256, 240, sf::Color::Red);
-		renderTexture.loadFromImage(renderImage);
-		renderSprite.setTexture(renderTexture);
-		renderSprite.setScale(2.0, 2.0);
-		renderSprite.setPosition(sf::Vector2f(0.0, 0.0));
-	}
-
 	void fetchSprites()
 	{
 		int i = 0;
@@ -263,14 +258,17 @@ namespace PPU
 			{
 				scanlineCount = 0;
 				renderTexture.update(renderImage);
+				VBlankOccured = true;
 				setVStat(false);
 			}
 		}
 	}
-
-	void draw()
+	
+	void init()
 	{
-		renderWindow->draw(renderSprite);
+		renderImage.create(256, 240);
+		renderTexture.loadFromImage(renderImage);
+		renderSprite.setTexture(renderTexture);
 	}
 
 	sf::Sprite* getRenderSprite()
@@ -329,7 +327,6 @@ namespace PPU
 		int yOffset = renderY - OAM[4 * currentSprite];
 		int colorSprite = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80)
 			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) + 8) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80);
-		//renderImage.setPixel(renderX, renderY, currentScanlineRender[renderX]);
 		switch (colorSprite)
 		{
 		case 0x180:

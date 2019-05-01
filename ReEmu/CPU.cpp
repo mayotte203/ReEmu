@@ -5,13 +5,6 @@
 #include <iostream>
 #include "APU.h"
 #include <SFML/Main.hpp>
-sf::Sprite patternSprite[256];
-
-sf::Texture patternTexture[256];
-
-sf::Sprite backgroundSprite[256];
-
-sf::Texture backgroundTexture[256];
 
 namespace CPU
 {
@@ -20,25 +13,26 @@ namespace CPU
 	u8 joystate = 0;
 	u8 joystate2 = 0;
 	bool VBNMI = true; //Allow vertical blank NMI
+	//Number of cycles for each opcode
 	u8 cycleCount[256] =
 	{
 		//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-			7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0, //0
-			2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0, //1
-			6, 0, 0, 0, 3, 3, 5, 0, 4, 2, 2, 0, 4, 4, 6, 0, //2
-			2, 6, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0, //3
-			6, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 3, 4, 6, 0, //4
-			2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0, //5
-			6, 6, 0, 0, 0, 3, 5, 0, 4, 2, 2, 0, 5, 4, 6, 0, //6
-			2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0, //7
-			0, 6, 0, 0, 3, 3, 3, 0, 2, 0, 2, 0, 4, 0, 4, 0, //8
-			2, 6, 0, 0, 4, 4, 4, 0, 2, 5, 2, 0, 5, 0, 0, 0, //9
-			2, 6, 2, 0, 3, 3, 3, 0, 2, 2, 2, 0, 4, 4, 4, 0, //A
-			2, 5, 0, 0, 4, 3, 4, 0, 2, 0, 2, 4, 4, 4, 4, 0, //B
-			2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 0, 4, 4, 6, 0, //C
-			2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0, //D
-			2, 6, 0, 0, 3, 5, 0, 0, 2, 2, 2, 0, 4, 4, 6, 0, //E
-			2, 5, 0, 0, 0, 6, 0, 0, 2, 4, 0, 0, 0, 4, 7, 0, //F
+			7, 6, 1, 1, 1, 3, 5, 1, 3, 2, 2, 1, 1, 4, 6, 1, //0
+			2, 5, 1, 1, 1, 4, 6, 1, 2, 4, 1, 1, 1, 4, 7, 1, //1
+			6, 1, 1, 1, 3, 3, 5, 1, 4, 2, 2, 1, 4, 4, 6, 1, //2
+			2, 6, 1, 1, 1, 4, 6, 1, 2, 4, 1, 1, 1, 4, 7, 1, //3
+			6, 6, 1, 1, 1, 3, 5, 1, 3, 2, 2, 1, 3, 4, 6, 1, //4
+			2, 5, 1, 1, 1, 4, 6, 1, 2, 4, 1, 1, 1, 4, 7, 1, //5
+			6, 6, 1, 1, 1, 3, 5, 1, 4, 2, 2, 1, 5, 4, 6, 1, //6
+			2, 5, 1, 1, 1, 4, 6, 1, 2, 4, 1, 1, 1, 4, 7, 1, //7
+			1, 6, 1, 1, 3, 3, 3, 1, 2, 1, 2, 1, 4, 1, 4, 1, //8
+			2, 6, 1, 1, 4, 4, 4, 1, 2, 5, 2, 1, 5, 1, 1, 1, //9
+			2, 6, 2, 1, 3, 3, 3, 1, 2, 2, 2, 1, 4, 4, 4, 1, //A
+			2, 5, 1, 1, 4, 3, 4, 1, 2, 1, 2, 4, 4, 4, 4, 1, //B
+			2, 6, 1, 1, 3, 3, 5, 1, 2, 2, 2, 1, 4, 4, 6, 1, //C
+			2, 5, 1, 1, 1, 4, 6, 1, 2, 4, 1, 1, 1, 4, 7, 1, //D
+			2, 6, 1, 1, 3, 5, 1, 1, 2, 2, 2, 1, 4, 4, 6, 1, //E
+			2, 5, 1, 1, 1, 6, 1, 1, 2, 4, 1, 1, 1, 4, 7, 1, //F
 	};
 	//Registers
 	u8 accRegister = 0;
@@ -226,6 +220,7 @@ namespace CPU
 		return memory[addr];
 	}
 
+//Addresing modes
 inline	u16 imm()
 	{
 		programCounter += 1;
@@ -281,6 +276,7 @@ inline	u16 ind()
 		return read(read(programCounter - 1) + read(programCounter) * 256) + read(((read(programCounter - 1) + 1) % 256) + read(programCounter) * 256) * 256;
 	}
 
+//CPU instructions
 	//-----------//
 	u8 operand = 0;
 	u16 result = 0;
@@ -677,7 +673,6 @@ inline	u16 ind()
 	}
 	void SBC(u16 addr)
 	{
-		//TODO better))
 		operand = read(addr);
 		signed char value = operand ^ 0xFF;
 		int oldAccRegister = accRegister;
@@ -752,7 +747,6 @@ inline	u16 ind()
 	void handleNMI()
 	{
 		statusFlag.B = false;
-		//TODO think about cycles
 		SEI();
 		JSR(read(0xFFFA) + read(0xFFFB) * 256 + 1);
 		PHP();
@@ -1531,14 +1525,7 @@ inline	u16 ind()
 	void init()
 	{
 		APU::init();
-		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
-		//GamePak::loadFromFile("Donkey_Kong.nes");
-		//GamePak::loadFromFile("color_test.nes");
-		GamePak::loadFromFile("Arkanoid (U).nes");
-		//GamePak::loadFromFile("Tetris (USA).nes");
-		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
-	    //GamePak::loadFromFile("battle-city.nes");
-		//GamePak::loadFromFile("Pac - Man(USA) (Namco).nes");
+		PPU::init();
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;

@@ -30,51 +30,79 @@ namespace GUI
 		}
 	}
 
+	enum State
+	{
+		MainMenu,
+
+		Options,
+		Emulator,
+		PauseMenu
+	};
+
 	void start()
 	{
-		sf::Font font;
-		font.loadFromFile("font.ttf");
 		sf::RenderWindow window(sf::VideoMode(512, 480), "ReEmu");
+		//GamePak::loadFromFile("Super_Mario_Bros._(E).nes");
+		GamePak::loadFromFile("Donkey_Kong.nes");
+		//GamePak::loadFromFile("color_test.nes");
+		//GamePak::loadFromFile("Arkanoid (U).nes");
+		//GamePak::loadFromFile("Tetris (USA).nes");
+		//GamePak::loadFromFile("Ice Climber (USA, Europe).nes");
+		//GamePak::loadFromFile("battle-city.nes");
+		//GamePak::loadFromFile("Pac - Man(USA) (Namco).nes");
 		CPU::init();
-		PPU::assignWindow(&window);
 		sf::Event event;
 		sf::Clock clock;
 		sf::Time elapsed;
-		sf::Text text;
-		text.setFont(font);
-		text.setString("Kal");
-		text.setPosition(250.0, 300.0);
-		text.setCharacterSize(24);
+		clock.restart();
+		elapsed = sf::Time::Zero;
+		bool renderState = false;
 		while (window.isOpen())
 		{
+			State currentState = State::Emulator;
 			sf::Event event;
 			while (window.pollEvent(event))
 			{
 				if (event.type == sf::Event::Closed)
 					window.close();
 			}
-			window.clear();
-			window.draw(text);
-			window.display();
-		}
-		bool isVBlankOccured = false;
-		while (window.isOpen())
-		{
-			sf::Event event;
-			while (window.pollEvent(event))
+			switch (currentState)
 			{
-				if (event.type == sf::Event::Closed)
-					window.close();
+			case MainMenu:
+			{
+				break;
 			}
-			CPU::op();
-			scounter++;
-			if (scounter == 7000)
+			case Options:
 			{
+				break;
+			}
+			case Emulator:
+			{
+				if (renderState)
+				{
+					while (!PPU::isVBlankOccured())
+					{
+						CPU::op();
+					}
+					renderState = false;
+				}
+				break;
+			}
+			case PauseMenu:
+			{
+				break;
+			}
+			}
+			elapsed += clock.restart();
+			if (elapsed.asMilliseconds() >= 1000.0 / 60.0)
+			{
+				elapsed = sf::Time::Zero;
 				window.clear();
-				PPU::draw();
+				window.draw(*PPU::getRenderSprite());
 				window.display();
-				scounter = false;
+				renderState = true;
 			}
 		}
+		window.close();
 	}
 }
