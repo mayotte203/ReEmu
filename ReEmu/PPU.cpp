@@ -11,9 +11,6 @@ namespace PPU
 	sf::Sprite renderSprite;
 	u8 memory[0x4000];
 	u8 OAM[0x100];
-	u8 spriteData[256];
-	u8 renderBuffer[240][256];
-	int spriteFetch[8];
 	int scanlineCount = 0;
 	int cycleCount = 0;
 	int renderX = 0;
@@ -155,21 +152,6 @@ namespace PPU
 		writeLatch = !writeLatch;
 	}
 
-	void setVStat(bool data)
-	{
-		PPUSTATUS.VBlank = data;
-	}
-
-	bool getVStat()
-	{
-		return  PPUSTATUS.VBlank;
-	}
-
-	void setsprite(bool data)
-	{
-		PPUSTATUS.sprite0 = data;
-	}
-
 	void writePPUDATA(u8 data)
 	{
 		if (PPUADDR < 0x4000)
@@ -196,21 +178,6 @@ namespace PPU
 		for (int i = 0; i < 256; i++)
 		{
 			OAM[OAMADDR++] = data[i];
-		}
-	}
-
-	void fetchSprites()
-	{
-		int i = 0;
-		int j = 0;
-		while (i < 64 && j < 8)
-		{
-			if (OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
-			{
-				spriteFetch[j] = i;
-				j++;
-			}
-			i++;
 		}
 	}
 
@@ -243,7 +210,7 @@ namespace PPU
 		}
 		else if (scanlineCount == 241 && cycleCount == 0)
 		{
-			setVStat(true);
+			PPUSTATUS.VBlank = true;
 			if (PPUCTRL.VBlankNMI)
 			{
 				CPU::handleNMI();
@@ -259,7 +226,7 @@ namespace PPU
 				scanlineCount = 0;
 				renderTexture.update(renderImage);
 				VBlankOccured = true;
-				setVStat(false);
+				PPUSTATUS.VBlank = false;
 			}
 		}
 	}
@@ -283,10 +250,11 @@ namespace PPU
 		int backgroundXOffset = backgroundX % 8;
 		int backgroundYOffset = backgroundY % 8;
 		int currentNametable = mirroring == HORIZONTAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
-		int currentNametableEnter = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
-		int currentBackgroundSprite = memory[0x2000 + currentNametable * 0x400 + currentNametableEnter];
-		int colorBackground = ((GamePak::readCHRROM(16 * currentBackgroundSprite + backgroundYOffset + 0x1000) << backgroundXOffset) & 0x80)
-			+ 2 * ((GamePak::readCHRROM(16 * currentBackgroundSprite + backgroundYOffset + 8 + 0x1000) << backgroundXOffset) & 0x80);
+		int currentNametableEntry = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
+		int currentBackgroundSprite = read(0x2000 + currentNametable * 0x400 + currentNametableEntry);
+		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + 0x1000;
+		int colorBackground = ((GamePak::readCHRROM(currentBackgroundLine) << backgroundXOffset) & 0x80)
+			+ 2 * ((GamePak::readCHRROM(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
 		int currentSprite = -1;
 		for (int i = 0; i < 64; i++)
 		{
@@ -296,81 +264,59 @@ namespace PPU
 				break;
 			}
 		}
-		if (currentSprite == -1)
-		{
-			switch (colorBackground)
-			{
-			case 0x180:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F03]]);
-				break;
-			}
-			case 0x100:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F02]]);
-				break;
-			}
-			case 0x80:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F01]]);
-				break;
-			}
-			case 0:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F00]]);
-				break;
-			}
-			}
-			return;
-		}
-		int xOffset = renderX - OAM[4 * currentSprite + 3];
-		int yOffset = renderY - OAM[4 * currentSprite];
-		int colorSprite = ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80)
-			+ 2 * ((GamePak::readCHRROM(16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) + 8) << (OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset)) & 0x80);
-		switch (colorSprite)
+		int currentAttributeEntry = read(0x23C0 + currentNametable * 0x400 + (((currentNametableEntry) / 128) * 8)
+										+ (((currentNametableEntry) % 32) / 4));
+		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * (((currentNametableEntry) / 32) % 2));
+		int currentBackgroundPalette = (currentAttributeEntry >> attributeOffset) & 0x3;
+		switch (colorBackground)
 		{
 		case 0x180:
 		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13]]);
+			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F03)]);
 			break;
 		}
 		case 0x100:
 		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12]]);
+			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F02)]);
 			break;
 		}
 		case 0x80:
 		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[memory[(OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11]]);
+			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F01)]);
 			break;
 		}
 		case 0:
 		{
-			switch (colorBackground)
+			renderImage.setPixel(renderX, renderY, NTSCPalette[read(0x3F00)]);
+			break;
+		}
+		}
+		if (currentSprite > -1)
+		{
+			int xOffset = renderX - OAM[4 * currentSprite + 3];
+			int yOffset = renderY - OAM[4 * currentSprite];
+			int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset);
+			int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
+			int colorSprite = ((GamePak::readCHRROM(spriteRenderLine) << spritePixelOffset) & 0x80)
+				+ 2 * ((GamePak::readCHRROM(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
+			switch (colorSprite)
 			{
 			case 0x180:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F03]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
 				break;
 			}
 			case 0x100:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F02]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
 				break;
 			}
 			case 0x80:
 			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[((memory[0x23C0 + currentNametable * 0x400 + (((currentNametableEnter) / 128) * 8) + (((currentNametableEnter) % 32) / 4)] >> (2 * ((((currentNametableEnter) % 4) / 2) + 2 * (((currentNametableEnter) / 32) % 2)))) & 0x3) * 4 + 0x3F01]]);
-				break;
-			}
-			case 0:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[memory[0x3F00]]);
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
 				break;
 			}
 			}
-			return;
-		}
 		}
 	}
 }

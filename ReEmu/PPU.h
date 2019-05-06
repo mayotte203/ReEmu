@@ -10,7 +10,6 @@ namespace PPU
 {
 	void write(u16 addr, u8 data);
 	u8 read(u16 addr);
-	void setVStat(bool data);
 	void writePPUCTRL(u8 data);
 	void writePPUMASK(u8 data);
 	u8 readPPUSTATUS();
@@ -23,10 +22,8 @@ namespace PPU
 	void writePPUDATA(u8 data);
 	u8 readPPUDATA();
 	void OAMDMA(u8 data[0x100]);
-	void setsprite(bool data);
 	void tick();
 	void init();
 	bool isVBlankOccured();
-	bool getVStat();
 	sf::Sprite* getRenderSprite();
 }

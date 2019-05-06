@@ -30,9 +30,6 @@
     <ClInclude Include="ColorsPalette.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="APU.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="emulator.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
@@ -51,9 +48,6 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="GamePak.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="APU.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="emulator.cpp">

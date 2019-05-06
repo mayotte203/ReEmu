@@ -3,7 +3,6 @@
 #include "GamePak.h"
 #include <fstream>
 #include <iostream>
-#include "APU.h"
 #include <SFML/Main.hpp>
 
 namespace CPU
@@ -221,56 +220,56 @@ namespace CPU
 	}
 
 //Addresing modes
-inline	u16 imm()
+u16 imm()
 	{
 		programCounter += 1;
 		return programCounter;
 	}
-inline	u16 zp()
+u16 zp()
 	{
 		programCounter += 1;
 		return read(programCounter);
 	}
-inline	u16 zpx()
+u16 zpx()
 	{
 		programCounter += 1;
 		return (read(programCounter) + xRegister) % 256;
 	}
-inline	u16 zpy()
+u16 zpy()
 	{
 		programCounter += 1;
 		return (read(programCounter) + yRegister) % 256;
 	}
-inline	u16 abs()
+u16 abs()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256;
 	}
-inline	u16 abx()
+u16 abx()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256 + xRegister;
 	}
-inline	u16 aby()
+u16 aby()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256 + yRegister;
 	}
-inline	u16 inx()
+u16 inx()
 	{
 		programCounter += 1;
 		return read((read(programCounter) + xRegister) % 256) + read((read(programCounter) + xRegister + 1) % 256) * 256;
 	}
-inline	u16 iny()
+u16 iny()
 	{
 		programCounter += 1;
 		return read(read(programCounter)) + read((read(programCounter) + 1) % 256) * 256 + yRegister;
 	}
-inline	u16 rel()
+u16 rel()
 	{
 		return imm();
 	}
-inline	u16 ind()
+u16 ind()
 	{
 		programCounter += 2;
 		return read(read(programCounter - 1) + read(programCounter) * 256) + read(((read(programCounter - 1) + 1) % 256) + read(programCounter) * 256) * 256;
@@ -410,7 +409,6 @@ inline	u16 ind()
 	}
 	void BRK()
 	{
-		//not yet implemented
 	}
 	void BVC(u16 addr)
 	{
@@ -666,7 +664,6 @@ inline	u16 ind()
 	}
 	void RTI()
 	{
-		//TODO think about cycles
 		PLP();
 		RTS();
 		programCounter--;
@@ -1512,6 +1509,10 @@ inline	u16 ind()
 			TYA();
 			break;
 		}
+		default:
+		{
+			break;
+		}
 		}
 		programCounter++;
 		for (int i = 0; i < cycleBuf; i++)
@@ -1524,7 +1525,6 @@ inline	u16 ind()
 
 	void init()
 	{
-		APU::init();
 		PPU::init();
 		stackPointer = 0xFD;
 		setFlags(0x34);

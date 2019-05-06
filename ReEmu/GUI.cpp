@@ -12,8 +12,6 @@
 
 using namespace std;
 
-int scounter = 0;
-
 namespace GUI
 {
 	void read_directory(const std::string& name)
