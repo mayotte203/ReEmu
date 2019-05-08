@@ -1,5 +1,5 @@
 #include "PPU.h"
-#include "CPU.h"
+
 namespace PPU
 {
 	bool VBlankOccured = false;
@@ -227,6 +227,7 @@ namespace PPU
 				renderTexture.update(renderImage);
 				VBlankOccured = true;
 				PPUSTATUS.VBlank = false;
+				PPUSTATUS.sprite0 = false;
 			}
 		}
 	}
@@ -236,6 +237,8 @@ namespace PPU
 		renderImage.create(256, 240);
 		renderTexture.loadFromImage(renderImage);
 		renderSprite.setTexture(renderTexture);
+		renderSprite.setOrigin(128, 120);
+		renderSprite.setPosition(256, 240);
 	}
 
 	sf::Sprite* getRenderSprite()
@@ -252,7 +255,7 @@ namespace PPU
 		int currentNametable = mirroring == HORIZONTAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
 		int currentNametableEntry = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
 		int currentBackgroundSprite = read(0x2000 + currentNametable * 0x400 + currentNametableEntry);
-		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + 0x1000;
+		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + PPUCTRL.backgroundPatternTable * 0x1000;
 		int colorBackground = ((GamePak::readCHRROM(currentBackgroundLine) << backgroundXOffset) & 0x80)
 			+ 2 * ((GamePak::readCHRROM(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
 		int currentSprite = -1;
@@ -268,34 +271,42 @@ namespace PPU
 										+ (((currentNametableEntry) % 32) / 4));
 		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * (((currentNametableEntry) / 32) % 2));
 		int currentBackgroundPalette = (currentAttributeEntry >> attributeOffset) & 0x3;
-		switch (colorBackground)
+		if (PPUMASK.showBackground)
 		{
-		case 0x180:
+			switch (colorBackground)
+			{
+			case 0x180:
+			{
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F03)]);
+				break;
+			}
+			case 0x100:
+			{
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F02)]);
+				break;
+			}
+			case 0x80:
+			{
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F01)]);
+				break;
+			}
+			case 0x0:
+			{
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read(0x3F00)]);
+				break;
+			}
+			}
+		}
+		else
 		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F03)]);
-			break;
+			renderImage.setPixel(renderX, renderY, NTSCPalette[0x3f]);
 		}
-		case 0x100:
-		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F02)]);
-			break;
-		}
-		case 0x80:
-		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F01)]);
-			break;
-		}
-		case 0:
-		{
-			renderImage.setPixel(renderX, renderY, NTSCPalette[read(0x3F00)]);
-			break;
-		}
-		}
-		if (currentSprite > -1)
+		if (currentSprite > -1 && PPUMASK.showSprites)
 		{
 			int xOffset = renderX - OAM[4 * currentSprite + 3];
 			int yOffset = renderY - OAM[4 * currentSprite];
-			int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset);
+			int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) 
+				+ PPUCTRL.spritePaternTable * 0x1000;
 			int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
 			int colorSprite = ((GamePak::readCHRROM(spriteRenderLine) << spritePixelOffset) & 0x80)
 				+ 2 * ((GamePak::readCHRROM(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
@@ -315,6 +326,13 @@ namespace PPU
 			{
 				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
 				break;
+			}
+			case 0x0:
+			{
+				if (currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
+				{
+					PPUSTATUS.sprite0 = true;
+				}
 			}
 			}
 		}

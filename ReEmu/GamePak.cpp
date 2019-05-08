@@ -1,5 +1,4 @@
 #include "GamePak.h"
-#include <fstream>
 
 namespace GamePak
 {
@@ -13,25 +12,55 @@ namespace GamePak
 
 	u8 readCHRROM(u16 addr)
 	{
+		if (addr > 8192 * 2)
+		{
+			return 0;
+		}
 		return CHRROM[addr];
 	}
+
 	u8 readPRGROM(u16 addr)
 	{
+		if (addr > 8192 * 4)
+		{
+			return 0;
+		}
 		return PRGROM[addr];
 	}	
 
-	void loadFromFile(const char* filename)
+	int loadFromFile(std::string filename)
 	{
 		std::ifstream ROMFile = std::ifstream(filename, std::ios::binary);
-		char header[16];;
-		ROMFile.read(header, 16);
+		if (!ROMFile.is_open())
+		{
+			return 1;
+		}
+		char header[16];
+		if (!ROMFile.read(header, 16))
+		{
+			return 2;
+		}
 		mirroring = header[6] & 0b00000001;
 		mirroringIgnore = header[6] & 0b00001000;
 		mapper = ((header[6] & 0b11110000) >> 4) + (header[7] & 0b11110000);
+		if (mapper != 0)
+		{
+			return 3;
+		}
 		PRGROMSize = header[4];
 		CHRROMSize = header[5];
-		ROMFile.read(PRGROM, 2 * 8192 * PRGROMSize);
-		ROMFile.read(CHRROM, 8192 * CHRROMSize);
+		if (PRGROMSize > 2 || CHRROMSize > 2)
+		{
+			return 4;
+		}
+		if (!ROMFile.read(PRGROM, 2 * 8192 * PRGROMSize))
+		{
+			return 2;
+		}
+		if (!ROMFile.read(CHRROM, 8192 * CHRROMSize))
+		{
+			return 2;
+		}
 		if (PRGROMSize == 1)
 		{
 			for (int i = 0; i < 16384; i++)
@@ -40,5 +69,6 @@ namespace GamePak
 			}
 		}
 		ROMFile.close();
+		return 0;
 	}
 }

@@ -333,3 +333,5 @@ ASALocalRun/
 #libs
 lib/
 *.dll
+
+#.nes

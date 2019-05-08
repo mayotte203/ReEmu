@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "GamePak.h"
+#include "CPU.h"
 #include "ColorsPalette.h"
 #include <SFML/Main.hpp>
 #include <SFML/Graphics.hpp>

@@ -1,17 +1,13 @@
 #include "CPU.h"
-#include "PPU.h"
-#include "GamePak.h"
-#include <fstream>
-#include <iostream>
-#include <SFML/Main.hpp>
+
 
 namespace CPU
 {
 	bool strobe = false;
-	u8 currentkey = 0;
 	u8 joystate = 0;
 	u8 joystate2 = 0;
 	bool VBNMI = true; //Allow vertical blank NMI
+
 	//Number of cycles for each opcode
 	u8 cycleCount[256] =
 	{
