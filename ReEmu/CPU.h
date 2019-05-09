@@ -2,6 +2,7 @@
 #include "common.h"
 #include "PPU.h"
 #include "GamePak.h"
+#include "joystick.h"
 #include <SFML/Main.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>

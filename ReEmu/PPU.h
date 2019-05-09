@@ -26,5 +26,6 @@ namespace PPU
 	void tick();
 	void init();
 	bool isVBlankOccured();
+	void setMirroring(bool mirroring);
 	sf::Sprite* getRenderSprite();
 }

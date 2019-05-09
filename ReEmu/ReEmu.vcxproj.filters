@@ -30,10 +30,10 @@
     <ClInclude Include="ColorsPalette.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="emulator.h">
+    <ClInclude Include="GUI.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="GUI.h">
+    <ClInclude Include="joystick.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,10 +50,10 @@
     <ClCompile Include="GamePak.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="emulator.cpp">
+    <ClCompile Include="GUI.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="GUI.cpp">
+    <ClCompile Include="joystick.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

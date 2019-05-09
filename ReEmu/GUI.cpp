@@ -10,12 +10,15 @@ namespace GUI
 	const static string fileErrorInvalid = "Invalid file";
 	const static string fileErrorNotSupported = "Unsupported ROM file";
 	const static string defaultStatusString = "Enter - start, Esc - menu";
+	const static string noROMsStatusString = "No ROMs found";
 	const static string loadROMString = "Load ROM";
-	const static string optionsString = "Options";
 	const static string exitString = "Exit";
 	const static string aboutString = "About";
+	const static string pauseString = "Pause";
+	const static string aboutInfoString = "Use arrows to navigate\n\nEnter - select, Esc - back\n\nIn game\n\nWASD - movement\n\nG - select, H - start\n\nK - A button, L - B button\n\nP - pause\n\n\n\nEmulator supports\n\nonly NROM ROMs\n\n\n\n            Made by Mayotte";
+
 	const static int FILE_MENU_POSITIONS = 10;
-	const static int MAIN_MENU_POSITIONS = 4;
+	const static int MAIN_MENU_POSITIONS = 3;
 	const static float MAX_FPS = 60.0;
 	const static int MAX_FILENAME_LENGTH = 22;
 
@@ -36,9 +39,10 @@ namespace GUI
 	sf::Text statusText;
 	sf::Text logoText;
 	sf::Text loadROMText;
-	sf::Text optionsText;
 	sf::Text exitText;
 	sf::Text aboutText;
+	sf::Text aboutInfoText;
+	sf::Text pauseText;
 
 	bool loadResources()
 	{
@@ -97,23 +101,29 @@ namespace GUI
 		loadROMText.setOrigin(loadROMText.getLocalBounds().width / 2.0, loadROMText.getLocalBounds().height / 2.0);
 		loadROMText.setPosition(512 / 2, 200);
 
-		optionsText.setFont(mainFont);
-		optionsText.setCharacterSize(18);
-		optionsText.setString(optionsString);
-		optionsText.setOrigin(optionsText.getLocalBounds().width / 2.0, optionsText.getLocalBounds().height / 2.0);
-		optionsText.setPosition(512 / 2, 250);
-
 		aboutText.setFont(mainFont);
 		aboutText.setCharacterSize(18);
 		aboutText.setString(aboutString);
 		aboutText.setOrigin(aboutText.getLocalBounds().width / 2.0, aboutText.getLocalBounds().height / 2.0);
-		aboutText.setPosition(512 / 2, 300);
+		aboutText.setPosition(512 / 2, 250);
 		
 		exitText.setFont(mainFont);
 		exitText.setCharacterSize(18);
 		exitText.setString(exitString);
 		exitText.setOrigin(exitText.getLocalBounds().width / 2.0, exitText.getLocalBounds().height / 2.0);
-		exitText.setPosition(512 / 2, 350);
+		exitText.setPosition(512 / 2, 300);
+
+		aboutInfoText.setFont(mainFont);
+		aboutInfoText.setCharacterSize(18);
+		aboutInfoText.setString(aboutInfoString);
+		aboutInfoText.setOrigin(aboutInfoText.getLocalBounds().width / 2.0, 0);
+		aboutInfoText.setPosition(512 / 2, 50);
+
+		pauseText.setFont(mainFont);
+		pauseText.setCharacterSize(18);
+		pauseText.setString(pauseString);
+		pauseText.setOrigin(pauseText.getLocalBounds().width / 2.0, pauseText.getLocalBounds().height / 2.0);
+		pauseText.setPosition(512 / 2, 480 / 2);
 	}
 
 	vector<string> getROMsFileNames(const std::string& name)
@@ -139,16 +149,16 @@ namespace GUI
 	{
 		MainMenu,
 		FileMenu,
-		Options,
 		Emulator,
+		About,
 		PauseMenu
 	};
 
-	void switchFileMenu()
+	void prepareFileMenu()
 	{
 		ROMsFileNames.clear();
 		ROMsFileNames = getROMsFileNames("roms");
-		for (int i = 0; i < FILE_MENU_POSITIONS & i < ROMsFileNames.size(); i++)
+		for (unsigned int i = 0; i < FILE_MENU_POSITIONS && i < ROMsFileNames.size(); i++)
 		{
 			fileNameText[i].setString(ROMsFileNames.at(i));
 		}
@@ -156,9 +166,14 @@ namespace GUI
 		fileMenuPosition = 0;
 		arrowSprite.setPosition(50, 40 + 40 * fileMenuArrowPosition);
 		statusText.setString(defaultStatusString);
+		if (ROMsFileNames.size() == 0)
+		{
+			statusText.setString(noROMsStatusString);
+		}
 	}	
-	void switchMainMenu()
+	void prepareMainMenu()
 	{
+		mainMenuArrowPosition = 0;
 		arrowSprite.setPosition(100, loadROMText.getGlobalBounds().top);
 	}
 
@@ -222,23 +237,42 @@ namespace GUI
 		keyState = false;
 		return false;
 	}
+	bool checkPKeyState()
+	{
+		static bool keyState = false;
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::P))
+		{
+			if (!keyState)
+			{
+				keyState = true;
+				return true;
+			}
+			return false;
+		}
+		keyState = false;
+		return false;
+	}
 
 	void start()
 	{
-		loadResources();
+		if (!loadResources())
+		{
+			cout << "Can't load resources" << endl;
+			system("pause");
+			return;
+		}
 		initResources();
 		sf::RenderWindow window(sf::VideoMode(512, 480), "ReEmu");
 		sf::View view = window.getDefaultView();
 		CPU::init();
-		sf::Event event;
 		sf::Clock clock;
 		sf::Time elapsed;
 		clock.restart();
 		elapsed = sf::Time::Zero;
 		bool renderState = false;
 		unsigned int menuPosition = 0;
-		switchFileMenu();
-		switchMainMenu();
+		prepareFileMenu();
+		prepareMainMenu();
 		State currentState = State::MainMenu;
 		while (window.isOpen())
 		{
@@ -253,21 +287,24 @@ namespace GUI
 						event.size.height > 480 ? event.size.height : 480));
 					view.setSize(event.size.width, event.size.height);
 					window.setView(view);
-					if (event.size.width > 1280 || event.size.height > 720)
+					float scale = 0.0;
+					if (event.size.width > mainMenuBackgroundImage.getSize().y || event.size.height > mainMenuBackgroundImage.getSize().x)
 					{
-						if (event.size.width / 1280.0 > event.size.height / 720.0)
+	
+						if (event.size.width / mainMenuBackgroundImage.getSize().y > event.size.height / mainMenuBackgroundImage.getSize().x)
 						{
-							mainMenuBackgroundSprite.setScale(event.size.width / 1280.0, event.size.width / 1280.0);
+							scale = (float)event.size.width / mainMenuBackgroundImage.getSize().y;
 						}
 						else
 						{
-							mainMenuBackgroundSprite.setScale(event.size.height / 720.0, event.size.height / 720.0);
+							scale = (float)event.size.height / mainMenuBackgroundImage.getSize().x;
 						}
 					}
 					else
 					{
-						mainMenuBackgroundSprite.setScale(1.0, 1.0);
+						scale = 1.0;
 					}
+					mainMenuBackgroundSprite.setScale(scale, scale);
 					if (event.size.width > 512 || event.size.height > 480)
 					{
 						if (event.size.width / 512.0 < event.size.height / 480.0)
@@ -303,15 +340,10 @@ namespace GUI
 						}
 						case 1:
 						{
-							arrowSprite.setPosition(100, optionsText.getGlobalBounds().top);
-							break;
-						}
-						case 2:
-						{
 							arrowSprite.setPosition(100, aboutText.getGlobalBounds().top);
 							break;
 						}
-						case 3:
+						case 2:
 						{
 							arrowSprite.setPosition(100, exitText.getGlobalBounds().top);
 							break;
@@ -333,15 +365,10 @@ namespace GUI
 						}
 						case 1:
 						{
-							arrowSprite.setPosition(100, optionsText.getGlobalBounds().top);
-							break;
-						}
-						case 2:
-						{
 							arrowSprite.setPosition(100, aboutText.getGlobalBounds().top);
 							break;
 						}
-						case 3:
+						case 2:
 						{
 							arrowSprite.setPosition(100, exitText.getGlobalBounds().top);
 							break;
@@ -355,19 +382,16 @@ namespace GUI
 					{
 					case 0:
 					{
-						switchFileMenu();
+						prepareFileMenu();
 						currentState = FileMenu;
 						break;
 					}
 					case 1:
 					{
+						currentState = About;
 						break;
 					}
 					case 2:
-					{
-						break;
-					}
-					case 3:
 					{
 						window.close();
 						break;
@@ -379,7 +403,7 @@ namespace GUI
 			}
 			case FileMenu:
 			{
-				if (checkDownArrowKeyState())
+				if (checkDownArrowKeyState() && ROMsFileNames.size() > 0)
 				{
 					if (fileMenuPosition + fileMenuArrowPosition < ROMsFileNames.size() - 1)
 					{
@@ -398,7 +422,7 @@ namespace GUI
 						}
 					}
 				}
-				if (checkUpArrowKeyState())
+				if (checkUpArrowKeyState() && ROMsFileNames.size() > 0)
 				{
 					if (fileMenuPosition + fileMenuArrowPosition > 0)
 					{
@@ -417,7 +441,7 @@ namespace GUI
 						}
 					}
 				}
-				if (checkEnterKeyState())
+				if (checkEnterKeyState() && ROMsFileNames.size() > 0)
 				{
 					string filePath = "roms/";
 					filePath.append(ROMsFileNames.at(fileMenuPosition + fileMenuArrowPosition));
@@ -446,27 +470,36 @@ namespace GUI
 					case 0:
 					{
 						CPU::init();
+						PPU::setMirroring(GamePak::getMirroring());
 						currentState = State::Emulator;
 					}
 					}
 				}
 				if (checkEscapeKeyState())
 				{
-					switchMainMenu();
+					prepareMainMenu();
 					currentState = MainMenu;
 				}
 				break;
 			}
-			case Options:
+			case About:
 			{
-				break;
+				if (checkEscapeKeyState())
+				{
+					prepareMainMenu();
+					currentState = MainMenu;
+				}
 			}
 			case Emulator:
 			{
 				if (checkEscapeKeyState())
 				{
-					switchFileMenu();
+					prepareFileMenu();
 					currentState = FileMenu;
+				}
+				if (checkPKeyState())
+				{
+					currentState = PauseMenu;
 				}
 				if (renderState)
 				{
@@ -480,6 +513,15 @@ namespace GUI
 			}
 			case PauseMenu:
 			{
+				if (checkEscapeKeyState())
+				{
+					prepareFileMenu();
+					currentState = FileMenu;
+				}
+				if (checkPKeyState())
+				{
+					currentState = Emulator;
+				}
 				break;
 			}
 			}
@@ -496,7 +538,6 @@ namespace GUI
 					window.draw(logoText);
 					window.draw(arrowSprite);
 					window.draw(loadROMText);
-					window.draw(optionsText);
 					window.draw(aboutText);
 					window.draw(exitText);
 					break;
@@ -516,6 +557,18 @@ namespace GUI
 						window.draw(fileNameText[i]);
 					}
 					window.draw(statusText);
+					break;
+				}
+				case About:
+				{
+					window.draw(aboutInfoText);
+					break;
+				}
+				case PauseMenu:
+				{
+					window.draw(mainMenuBackgroundSprite);
+					window.draw(*PPU::getRenderSprite());
+					window.draw(pauseText);
 					break;
 				}
 				case Emulator:

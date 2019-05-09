@@ -3,7 +3,7 @@
 namespace PPU
 {
 	bool VBlankOccured = false;
-	bool mirroring = VERTICAL;
+	bool mirroring = HORIZONTAL;
 	bool writeLatch = 0;
 	sf::RenderWindow *renderWindow;
 	sf::Image renderImage;
@@ -72,6 +72,11 @@ namespace PPU
 			return memory[addr];
 		}
 		return 0;
+	}
+	
+	void setMirroring(bool mirroring)
+	{
+
 	}
 
 	void writePPUCTRL(u8 data)
@@ -143,11 +148,11 @@ namespace PPU
 	{
 		if (writeLatch)
 		{
-			PPUADDR = (PPUADDR & 0xFF00) + data;
+			PPUADDR = (PPUADDR & 0xFF00) | data;
 		}
 		else
 		{
-			PPUADDR = (PPUADDR & 0xFF) + (data * 0x100);
+			PPUADDR = (PPUADDR & 0xFF) | (data * 0x100);
 		}
 		writeLatch = !writeLatch;
 	}
@@ -252,7 +257,7 @@ namespace PPU
 		int backgroundY = (PPUCTRL.NY * 240 + PPUSCROLLY + renderY) % 480;
 		int backgroundXOffset = backgroundX % 8;
 		int backgroundYOffset = backgroundY % 8;
-		int currentNametable = mirroring == HORIZONTAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
+		int currentNametable = mirroring == VERTICAL ? 2 * (backgroundY / 240) : (backgroundX / 256);
 		int currentNametableEntry = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
 		int currentBackgroundSprite = read(0x2000 + currentNametable * 0x400 + currentNametableEntry);
 		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + PPUCTRL.backgroundPatternTable * 0x1000;
@@ -314,16 +319,19 @@ namespace PPU
 			{
 			case 0x180:
 			{
+				if(colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
 				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
 				break;
 			}
 			case 0x100:
 			{
+				if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
 				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
 				break;
 			}
 			case 0x80:
 			{
+				if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
 				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
 				break;
 			}

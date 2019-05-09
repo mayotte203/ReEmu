@@ -9,6 +9,10 @@ namespace GamePak
 	u8 mapper = 0;
 	char PRGROM[8192 * 4];
 	char CHRROM[8192 * 2];
+	bool getMirroring()
+	{
+		return mirroring;
+	}
 
 	u8 readCHRROM(u16 addr)
 	{
@@ -39,6 +43,10 @@ namespace GamePak
 		if (!ROMFile.read(header, 16))
 		{
 			return 2;
+		}
+		if (header[0] != 'N' || header[1] != 'E' || header[2] != 'S')
+		{
+			return 3;
 		}
 		mirroring = header[6] & 0b00000001;
 		mirroringIgnore = header[6] & 0b00001000;
