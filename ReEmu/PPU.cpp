@@ -2,19 +2,29 @@
 
 namespace PPU
 {
-	bool VBlankOccured = false;
+	//Mirroring type
 	bool mirroring = HORIZONTAL;
+	//Register write latch
 	bool writeLatch = 0;
-	sf::RenderWindow *renderWindow;
+	//Specific PPU conditions
+	bool sprite0Occured = false;
+	bool VBlankOccured = false;
+	//Render buffer
 	sf::Image renderImage;
 	sf::Texture renderTexture;
 	sf::Sprite renderSprite;
+	//RAM
 	u8 memory[0x4000];
+	//Object Attribute Memory
 	u8 OAM[0x100];
+	//current rendering scanline
 	int scanlineCount = 0;
+	//current PPU cycle within scanline
 	int cycleCount = 0;
+	//current render position
 	int renderX = 0;
 	int renderY = 0;
+	//Registers
 	u8 OAMADDR = 0;
 	u8 PPUSCROLLX = 0;
 	u8 PPUSCROLLY = 0;
@@ -53,6 +63,11 @@ namespace PPU
 	
 	void pixel();
 
+	sf::Sprite* getRenderSprite()
+	{
+		return &renderSprite;
+	}
+
 	bool isVBlankOccured() 
 	{
 		bool oldVBlank = VBlankOccured;
@@ -62,11 +77,34 @@ namespace PPU
 
 	void write(u16 addr, u8 data)
 	{
-
+		if (addr < 0x2000)
+		{
+			GamePak::writeCHRROM(addr, data);
+		}
+		else if (addr < 0x4000)
+		{
+			memory[addr] = data;
+			if (addr > 0x3F1F)
+			{
+				write(0x3F00 + (addr % 0x20), data);
+			}
+			if (addr == 0x3f10)
+			{
+				write(0x3f00, data);
+			}
+			if (addr >= 0x2800 && addr <= 0x2FFF)
+			{
+				write(addr - 0x800, data);
+			}
+		}
 	}
 
 	u8 read(u16 addr)
 	{
+		if (addr < 0x2000)
+		{
+			return GamePak::readCHRROM(addr);
+		}
 		if (addr < 0x4000)
 		{
 			return memory[addr];
@@ -74,9 +112,9 @@ namespace PPU
 		return 0;
 	}
 	
-	void setMirroring(bool mirroring)
+	void setMirroring(bool data)
 	{
-
+		mirroring = data;
 	}
 
 	void writePPUCTRL(u8 data)
@@ -161,7 +199,7 @@ namespace PPU
 	{
 		if (PPUADDR < 0x4000)
 		{
-			memory[PPUADDR] = data;
+			write(PPUADDR, data);
 		}
 		PPUADDR += PPUCTRL.VRAMIncrement ? 32 : 1;
 	}
@@ -233,6 +271,7 @@ namespace PPU
 				VBlankOccured = true;
 				PPUSTATUS.VBlank = false;
 				PPUSTATUS.sprite0 = false;
+				sprite0Occured = false;
 			}
 		}
 	}
@@ -244,11 +283,13 @@ namespace PPU
 		renderSprite.setTexture(renderTexture);
 		renderSprite.setOrigin(128, 120);
 		renderSprite.setPosition(256, 240);
-	}
-
-	sf::Sprite* getRenderSprite()
-	{
-		return &renderSprite;
+		writePPUCTRL(0);
+		writePPUMASK(0);
+		PPUSCROLLX = 0;
+		PPUSCROLLY = 0;
+		writeLatch = 0;
+		PPUADDR = 0;
+		OAMADDR = 0;
 	}
 
 	void pixel()
@@ -261,8 +302,8 @@ namespace PPU
 		int currentNametableEntry = ((backgroundX % 256) / 8) + (((backgroundY % 240) / 8) * 32);
 		int currentBackgroundSprite = read(0x2000 + currentNametable * 0x400 + currentNametableEntry);
 		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + PPUCTRL.backgroundPatternTable * 0x1000;
-		int colorBackground = ((GamePak::readCHRROM(currentBackgroundLine) << backgroundXOffset) & 0x80)
-			+ 2 * ((GamePak::readCHRROM(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
+		int colorBackground = ((read(currentBackgroundLine) << backgroundXOffset) & 0x80)
+			+ 2 * ((read(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
 		int currentSprite = -1;
 		for (int i = 0; i < 64; i++)
 		{
@@ -313,35 +354,40 @@ namespace PPU
 			int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) 
 				+ PPUCTRL.spritePaternTable * 0x1000;
 			int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
-			int colorSprite = ((GamePak::readCHRROM(spriteRenderLine) << spritePixelOffset) & 0x80)
-				+ 2 * ((GamePak::readCHRROM(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
-			switch (colorSprite)
+			int colorSprite = ((read(spriteRenderLine) << spritePixelOffset) & 0x80)
+				+ 2 * ((read(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
+			if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
 			{
-			case 0x180:
-			{
-				if(colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
-				break;
-			}
-			case 0x100:
-			{
-				if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
-				break;
-			}
-			case 0x80:
-			{
-				if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
-				break;
-			}
-			case 0x0:
-			{
-				if (currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
+				switch (colorSprite)
 				{
-					PPUSTATUS.sprite0 = true;
+				case 0x180:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
+					break;
+				}
+				case 0x100:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
+					break;
+				}
+				case 0x80:
+				{
+					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
+					break;
+				}
+				case 0x0:
+				{
+
+				}
 				}
 			}
+			if (colorSprite == 0 && currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
+			{
+				if (!sprite0Occured)
+				{
+					PPUSTATUS.sprite0 = true;
+					sprite0Occured = true;
+				}
 			}
 		}
 	}

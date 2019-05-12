@@ -5,11 +5,9 @@ namespace CPU
 {
 	bool strobe = false;
 	u8 joystate = 0;
-	u8 joystate2 = 0;
-	bool VBNMI = true; //Allow vertical blank NMI
 
 	//Number of cycles for each opcode
-	u8 cycleCount[256] =
+	const u8 cycleCount[256] =
 	{
 		//  0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
 			7, 6, 1, 1, 1, 3, 5, 1, 3, 2, 2, 1, 1, 4, 6, 1, //0
@@ -71,6 +69,58 @@ namespace CPU
 		statusFlag.C = state & 0x1;
 	}
 
+	u8 read(u16 addr)
+	{
+		if (addr < 0x2000)
+		{
+			return memory[addr % 0x800];
+		}
+		else if (addr < 0x4000)
+		{
+			switch (addr % 0x8)
+			{
+			case 2:
+			{
+				return PPU::readPPUSTATUS();
+			}
+			case 3:
+			{
+				return PPU::readOAMADDR();
+			}
+			case 4:
+			{
+				return PPU::readOAMDATA();
+			}
+			case 7:
+			{
+				return PPU::readPPUDATA();
+			}
+			}
+		}
+		else if (addr < 0x4020)
+		{
+			switch (addr)
+			{
+			case 0x4016:
+			{
+				if (strobe)
+				{
+					return sf::Keyboard::isKeyPressed(sf::Keyboard::K) & 0x1;
+				}
+				u8 buf = joystate;
+				joystate = 0x80 | (joystate >> 1);
+				buf = (buf & 0x1) | 0x40;
+				return buf;
+			}
+			}
+		}
+		else if (addr > 0x7FFF)
+		{
+			return GamePak::readPRGROM(addr);
+		}
+		return 0;
+	}
+
 	void write(u16 addr, u8 data)
 	{
 		if (addr < 0x2000)
@@ -88,7 +138,6 @@ namespace CPU
 			case 0:
 			{
 				PPU::writePPUCTRL(data);
-				VBNMI = data & 0x80;
 				break;
 			}
 			case 1:
@@ -142,122 +191,81 @@ namespace CPU
 				if (strobe && !(data & 0x1))
 				{
 					joystate = joystick::getJoystickState();
-					joystate2 = joystate;
 				}
 				strobe = data & 0x1;
 				break;
 			}
 			}
 		}
-		else
-		{
-			memory[addr] = data;
-		}
-	}
-
-	u8 read(u16 addr)
-	{
-		if (addr < 0x2000)
-		{
-			return memory[addr % 0x800];
-		}
-		else if (addr < 0x4000)
-		{
-			switch (addr % 0x8)
-			{
-			case 2:
-			{
-				return PPU::readPPUSTATUS();
-			}
-			case 3:
-			{
-				return PPU::readOAMADDR();
-			}
-			case 4:
-			{
-				return PPU::readOAMDATA();
-			}
-			case 7:
-			{
-				return PPU::readPPUDATA();
-			}
-			}
-		}
-		else if (addr < 0x4020)
-		{
-			switch (addr)
-			{
-			case 0x4016:
-			{
-				if (strobe)
-				{
-					return sf::Keyboard::isKeyPressed(sf::Keyboard::K) & 0x1;
-				}
-				u8 buf = joystate;
-				joystate = 0x80 | (joystate >> 1);
-				buf = (buf & 0x1) | 0x40;
-				return buf;
-			}
-			}
-			return 0;
-		}
 		else if (addr > 0x7FFF)
 		{
-			return GamePak::readPRGROM(addr - 0x8000);
+			GamePak::writePRGROM(addr, data);
 		}
-		return memory[addr];
 	}
 
+	
+
 //Addresing modes
+//Immediate
 u16 imm()
 	{
 		programCounter += 1;
 		return programCounter;
 	}
+//Zeropage
 u16 zp()
 	{
 		programCounter += 1;
 		return read(programCounter);
 	}
+//Zeropage, x
 u16 zpx()
 	{
 		programCounter += 1;
 		return (read(programCounter) + xRegister) % 256;
 	}
+//Zeropage, Y
 u16 zpy()
 	{
 		programCounter += 1;
 		return (read(programCounter) + yRegister) % 256;
 	}
+//Absolute
 u16 abs()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256;
 	}
+//Absolute, x
 u16 abx()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256 + xRegister;
 	}
+//Absolute, y
 u16 aby()
 	{
 		programCounter += 2;
 		return read(programCounter - 1) + read(programCounter) * 256 + yRegister;
 	}
+//Indirect, x
 u16 inx()
 	{
 		programCounter += 1;
 		return read((read(programCounter) + xRegister) % 256) + read((read(programCounter) + xRegister + 1) % 256) * 256;
 	}
+//Indirect, y
 u16 iny()
 	{
 		programCounter += 1;
 		return read(read(programCounter)) + read((read(programCounter) + 1) % 256) * 256 + yRegister;
 	}
+//Relative
 u16 rel()
 	{
 		return imm();
 	}
+//Indirect
 u16 ind()
 	{
 		programCounter += 2;
@@ -664,7 +672,7 @@ u16 ind()
 		int oldAccRegister = accRegister;
 		char result = accRegister + value + 1 * statusFlag.C;
 		statusFlag.V = (oldAccRegister ^ result) & (value ^ result) & 0x80;
-		int carryCheck = unsigned char(oldAccRegister) + unsigned char(value) + statusFlag.C;
+		int carryCheck = (unsigned char)(oldAccRegister) + (unsigned char)(value) + statusFlag.C;
 		if (carryCheck > 255)
 		{
 			statusFlag.C = true;
@@ -1515,6 +1523,10 @@ u16 ind()
 	void init()
 	{
 		PPU::init();
+		PPU::setMirroring(GamePak::getMirroring());
+		accRegister = 0;
+		xRegister = 0;
+		yRegister = 0;
 		stackPointer = 0xFD;
 		setFlags(0x34);
 		programCounter = read(0xFFFC) + read(0xFFFD) * 256;

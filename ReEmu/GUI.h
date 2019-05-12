@@ -9,7 +9,11 @@
 #include <cstdint>
 #include <regex>
 #include <vector>
+#ifdef __linux__ 
+#include <dirent.h>
+#elif _WIN32
 #include <Windows.h>
+#endif
 
 namespace GUI
 {

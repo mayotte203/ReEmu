@@ -43,6 +43,14 @@ namespace GUI
 	sf::Text aboutText;
 	sf::Text aboutInfoText;
 	sf::Text pauseText;
+	enum State
+	{
+		MainMenu,
+		FileMenu,
+		Emulator,
+		About,
+		PauseMenu
+	};
 
 	bool loadResources()
 	{
@@ -64,6 +72,7 @@ namespace GUI
 		}
 		return true;
 	}
+
 	void initResources()
 	{
 		PPU::getRenderSprite()->setScale(2.0, 2.0);
@@ -126,10 +135,28 @@ namespace GUI
 		pauseText.setPosition(512 / 2, 480 / 2);
 	}
 
-	vector<string> getROMsFileNames(const std::string& name)
+	vector<string> getROMsFileNames()
 	{
 		vector<string> files;
-		std::string pattern(name);
+		#ifdef __linux__ 
+		DIR           *dirp;
+		struct dirent *directory;
+
+		dirp = opendir("roms");
+		if (dirp)
+		{
+			while ((directory = readdir(dirp)) != NULL)
+			{
+				if (regex_match(directory->d_name, regex(".*\\.nes$")))
+				{
+					files.push_back(directory->d_name);
+				}
+			}
+
+			closedir(dirp);
+		}
+		#elif _WIN32
+		std::string pattern("roms");
 		pattern.append("\\*");
 		WIN32_FIND_DATA data;
 		HANDLE hFind;
@@ -142,22 +169,14 @@ namespace GUI
 			} while (FindNextFileA(hFind, &data) != 0);
 			FindClose(hFind);
 		}
+		#endif
 		return files;
 	}
-
-	enum State
-	{
-		MainMenu,
-		FileMenu,
-		Emulator,
-		About,
-		PauseMenu
-	};
 
 	void prepareFileMenu()
 	{
 		ROMsFileNames.clear();
-		ROMsFileNames = getROMsFileNames("roms");
+		ROMsFileNames = getROMsFileNames();
 		for (unsigned int i = 0; i < FILE_MENU_POSITIONS && i < ROMsFileNames.size(); i++)
 		{
 			fileNameText[i].setString(ROMsFileNames.at(i));
@@ -210,7 +229,13 @@ namespace GUI
 	bool checkEnterKeyState()
 	{
 		static bool keyState = false;
+		#ifdef __linux__ 
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
+		#elif _WIN32
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
+		#else
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
+		#endif
 		{
 			if (!keyState)
 			{
@@ -470,7 +495,6 @@ namespace GUI
 					case 0:
 					{
 						CPU::init();
-						PPU::setMirroring(GamePak::getMirroring());
 						currentState = State::Emulator;
 					}
 					}
