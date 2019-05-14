@@ -13,5 +13,6 @@ using namespace std;
 int main()
 {
 	GUI::start();
+	GamePak::free();
 	return 0;
 }

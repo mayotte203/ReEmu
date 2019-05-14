@@ -59,8 +59,23 @@ namespace APU
 		pulseChannelBuffer.loadFromSamples(PULSE_WAVEFORM2, PULSE_SAMPLECOUNT, 1, SAMPLE_RATE);
 		pulseChannelSound.setBuffer(pulseChannelBuffer);
 		pulseChannelSound.setLoop(true);
+		pulseChannelSound.play();
 		triangleChannelBuffer.loadFromSamples(TRIANGLE_WAVEFORM, PULSE_SAMPLECOUNT, 1, SAMPLE_RATE);
 		triangleChannelSound.setBuffer(triangleChannelBuffer);
 		triangleChannelSound.setLoop(true);
+	}
+	void writePulse1Register2(u8 data)
+	{
+		pulse1Register2 = data;
+		int t = (pulse1Register3 & 0x7) * 256 + pulse1Register2;
+		double f = CPU_CLOCK / (16 * (t + 1));
+		pulseChannelSound.setPitch(f / 6000.0);
+	}
+	void writePulse1Register3(u8 data)
+	{
+		pulse1Register3 = data;
+		int t = (pulse1Register3 & 0x7) * 256 + pulse1Register2;
+		double f = CPU_CLOCK / (16 * (t + 1));
+		pulseChannelSound.setPitch(f / 6000.0);
 	}
 }

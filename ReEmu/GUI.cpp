@@ -289,7 +289,6 @@ namespace GUI
 		initResources();
 		sf::RenderWindow window(sf::VideoMode(512, 480), "ReEmu");
 		sf::View view = window.getDefaultView();
-		CPU::init();
 		sf::Clock clock;
 		sf::Time elapsed;
 		clock.restart();

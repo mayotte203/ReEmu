@@ -34,7 +34,7 @@ namespace CPU
 	u16 programCounter = 0;
 	u8 stackPointer = 0;
 
-	u8 memory[0xFFFF];
+	u8 memory[0x800];
 
 	struct statusFlag
 	{
@@ -125,10 +125,6 @@ namespace CPU
 	{
 		if (addr < 0x2000)
 		{
-			if (addr > 1 && addr < 50)
-			{
-				memory[addr % 0x800] = data;
-			}
 			memory[addr % 0x800] = data;
 		}
 		else if (addr < 0x4000)

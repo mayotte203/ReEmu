@@ -9,4 +9,5 @@ namespace GamePak
 	u8 readPRGROM(u16 addr);
 	void writePRGROM(u16 addr, u8 data);
 	void writeCHRROM(u16 addr, u8 data);
+	void free();
 }

@@ -8,6 +8,7 @@
 #include <SFML/Graphics.hpp>
 #include <fstream>
 #include <iostream>
+
 namespace CPU
 {
 	void init();

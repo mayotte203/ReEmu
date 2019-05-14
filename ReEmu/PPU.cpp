@@ -6,7 +6,7 @@ namespace PPU
 	bool mirroring = HORIZONTAL;
 	//Register write latch
 	bool writeLatch = 0;
-	//Specific PPU conditions
+	//PPU conditions
 	bool sprite0Occured = false;
 	bool VBlankOccured = false;
 	//Render buffer
@@ -304,15 +304,7 @@ namespace PPU
 		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + PPUCTRL.backgroundPatternTable * 0x1000;
 		int colorBackground = ((read(currentBackgroundLine) << backgroundXOffset) & 0x80)
 			+ 2 * ((read(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
-		int currentSprite = -1;
-		for (int i = 0; i < 64; i++)
-		{
-			if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
-			{
-				currentSprite = i;
-				break;
-			}
-		}
+		
 		int currentAttributeEntry = read(0x23C0 + currentNametable * 0x400 + (((currentNametableEntry) / 128) * 8)
 										+ (((currentNametableEntry) % 32) / 4));
 		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * (((currentNametableEntry) / 32) % 2));
@@ -347,46 +339,58 @@ namespace PPU
 		{
 			renderImage.setPixel(renderX, renderY, NTSCPalette[0x3f]);
 		}
-		if (currentSprite > -1 && PPUMASK.showSprites)
-		{
-			int xOffset = renderX - OAM[4 * currentSprite + 3];
-			int yOffset = renderY - OAM[4 * currentSprite];
-			int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset) 
-				+ PPUCTRL.spritePaternTable * 0x1000;
-			int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
-			int colorSprite = ((read(spriteRenderLine) << spritePixelOffset) & 0x80)
-				+ 2 * ((read(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
-			if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
-			{
-				switch (colorSprite)
-				{
-				case 0x180:
-				{
-					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
-					break;
-				}
-				case 0x100:
-				{
-					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
-					break;
-				}
-				case 0x80:
-				{
-					renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
-					break;
-				}
-				case 0x0:
-				{
 
-				}
-				}
-			}
-			if (colorSprite == 0 && currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
+		if (PPUMASK.showSprites)
+		{
+			for (int i = 0; i < 64; i++)
 			{
-				if (!sprite0Occured)
+				if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
 				{
-					PPUSTATUS.sprite0 = true;
-					sprite0Occured = true;
+					int currentSprite = i;
+					int xOffset = renderX - OAM[4 * currentSprite + 3];
+					int yOffset = renderY - OAM[4 * currentSprite];
+					int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)
+						+ PPUCTRL.spritePaternTable * 0x1000;
+					int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
+					int colorSprite = ((read(spriteRenderLine) << spritePixelOffset) & 0x80)
+						+ 2 * ((read(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
+					if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
+					{
+						switch (colorSprite)
+						{
+						case 0x180:
+						{
+							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
+							break;
+						}
+						case 0x100:
+						{
+							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
+							break;
+						}
+						case 0x80:
+						{
+							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
+							break;
+						}
+						case 0x0:
+						{
+
+						}
+						}
+					}
+					if (colorSprite == 0 && currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
+					{
+						if (!sprite0Occured)
+						{
+							PPUSTATUS.sprite0 = true;
+							sprite0Occured = true;
+						}
+					}
+					if (colorSprite != 0)
+					{
+						break;
+					}
 				}
 			}
 		}
