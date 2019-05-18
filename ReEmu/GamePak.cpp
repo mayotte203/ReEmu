@@ -14,7 +14,7 @@ namespace GamePak
 	//ROMs
 	u8* PRGROM;
 	u8 CHRROM[8192 * 2];
-
+	//Mapper data
 	u8 currentBank = 0;
 
 	bool getMirroring()

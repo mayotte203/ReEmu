@@ -29,6 +29,8 @@ namespace PPU
 	u8 PPUSCROLLX = 0;
 	u8 PPUSCROLLY = 0;
 	u16 PPUADDR = 0;
+	//Sprite size
+	u8 spriteHeight = 7;
 
 	struct PPUCTRL
 	{
@@ -127,6 +129,14 @@ namespace PPU
 		PPUCTRL.VRAMIncrement = data & 0x4;
 		PPUCTRL.NY = data & 0x2;
 		PPUCTRL.NX = data & 0x1;
+		if (PPUCTRL.spriteSize)
+		{
+			spriteHeight = 15;
+		}
+		else
+		{
+			spriteHeight = 7;
+		}
 	}
 
 	void writePPUMASK(u8 data)
@@ -344,13 +354,27 @@ namespace PPU
 		{
 			for (int i = 0; i < 64; i++)
 			{
-				if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + 7 >= renderY)
+				if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + spriteHeight >= renderY)
 				{
 					int currentSprite = i;
 					int xOffset = renderX - OAM[4 * currentSprite + 3];
 					int yOffset = renderY - OAM[4 * currentSprite];
-					int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? 7 - yOffset : yOffset)
-						+ PPUCTRL.spritePaternTable * 0x1000;
+					int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? spriteHeight - yOffset : yOffset);
+					if (PPUCTRL.spriteSize)
+					{
+						if ((OAM[4 * currentSprite + 2] & 0x80 ? spriteHeight - yOffset : yOffset) > 7)
+						{
+							spriteRenderLine += 8;
+						}
+						if (OAM[4 * currentSprite + 1] & 0x1)
+						{
+							spriteRenderLine += 0x1000 - 0x10;
+						}
+					}
+					else
+					{
+						spriteRenderLine += PPUCTRL.spritePaternTable * 0x1000;
+					}
 					int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
 					int colorSprite = ((read(spriteRenderLine) << spritePixelOffset) & 0x80)
 						+ 2 * ((read(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
