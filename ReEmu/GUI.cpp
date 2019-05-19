@@ -15,7 +15,7 @@ namespace GUI
 	const static string exitString = "Exit";
 	const static string aboutString = "About";
 	const static string pauseString = "Pause";
-	const static string aboutInfoString = "Use arrows to navigate\n\nEnter - select, Esc - back\n\nIn game\n\nWASD - movement\n\nG - select, H - start\n\nK - A button, L - B button\n\nP - pause\n\n\n\nEmulator supports\n\nonly NROM ROMs\n\n\n\n            Made by Mayotte";
+	const static string aboutInfoString = "Use arrows to navigate\n\nEnter - select, Esc - back\n\nIn game\n\nWASD - D-PAD\n\nG - select, H - start\n\nK - A button, L - B button\n\nP - pause\n\n\n\nEmulator supports\n\nonly NROM and UNROM ROMs\n\n\n\n            Made by Mayotte";
 
 	const static int FILE_MENU_POSITIONS = 10;
 	const static int MAIN_MENU_POSITIONS = 3;
