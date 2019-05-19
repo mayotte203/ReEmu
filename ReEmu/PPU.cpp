@@ -316,7 +316,7 @@ namespace PPU
 			+ 2 * ((read(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);		
 		int currentAttributeEntry = read(0x23C0 + currentNametable * 0x400 + (((currentNametableEntry) / 128) * 8)
 										+ (((currentNametableEntry) % 32) / 4));
-		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * (((currentNametableEntry) / 32) % 2));
+		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * ((((currentNametableEntry) / 32) % 4) / 2));
 		int currentBackgroundPalette = (currentAttributeEntry >> attributeOffset) & 0x3;
 		if (PPUMASK.showBackground)
 		{
