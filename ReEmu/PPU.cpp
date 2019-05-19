@@ -333,7 +333,6 @@ namespace PPU
 		{
 			renderImage.setPixel(renderX, renderY, NTSCPalette[0x3f]);
 		}
-
 		if (PPUMASK.showSprites)
 		{
 			for (int i = 0; i < 64; i++)

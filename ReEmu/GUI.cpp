@@ -512,6 +512,7 @@ namespace GUI
 					prepareMainMenu();
 					currentState = MainMenu;
 				}
+				break;
 			}
 			case Emulator:
 			{
