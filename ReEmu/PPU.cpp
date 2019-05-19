@@ -313,36 +313,20 @@ namespace PPU
 		int currentBackgroundSprite = read(0x2000 + currentNametable * 0x400 + currentNametableEntry);
 		int currentBackgroundLine = 16 * currentBackgroundSprite + backgroundYOffset + PPUCTRL.backgroundPatternTable * 0x1000;
 		int colorBackground = ((read(currentBackgroundLine) << backgroundXOffset) & 0x80)
-			+ 2 * ((read(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);
-		
+			+ 2 * ((read(currentBackgroundLine + 8) << backgroundXOffset) & 0x80);		
 		int currentAttributeEntry = read(0x23C0 + currentNametable * 0x400 + (((currentNametableEntry) / 128) * 8)
 										+ (((currentNametableEntry) % 32) / 4));
 		int attributeOffset = 2 * ((((currentNametableEntry) % 4) / 2) + 2 * (((currentNametableEntry) / 32) % 2));
 		int currentBackgroundPalette = (currentAttributeEntry >> attributeOffset) & 0x3;
 		if (PPUMASK.showBackground)
 		{
-			switch (colorBackground)
+			if (colorBackground)
 			{
-			case 0x180:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F03)]);
-				break;
+				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F00 + colorBackground / 0x80)]);
 			}
-			case 0x100:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F02)]);
-				break;
-			}
-			case 0x80:
-			{
-				renderImage.setPixel(renderX, renderY, NTSCPalette[read(currentBackgroundPalette * 4 + 0x3F01)]);
-				break;
-			}
-			case 0x0:
+			else
 			{
 				renderImage.setPixel(renderX, renderY, NTSCPalette[read(0x3F00)]);
-				break;
-			}
 			}
 		}
 		else
@@ -357,16 +341,21 @@ namespace PPU
 				if (OAM[4 * i + 3] <= renderX && OAM[4 * i + 3] + 7 >= renderX && OAM[4 * i] <= renderY && OAM[4 * i] + spriteHeight >= renderY)
 				{
 					int currentSprite = i;
-					int xOffset = renderX - OAM[4 * currentSprite + 3];
-					int yOffset = renderY - OAM[4 * currentSprite];
-					int spriteRenderLine = 16 * OAM[4 * currentSprite + 1] + (OAM[4 * currentSprite + 2] & 0x80 ? spriteHeight - yOffset : yOffset);
+					int currentSpriteX = OAM[4 * currentSprite + 3];
+					int currentSpriteY = OAM[4 * currentSprite];
+					int currentSpritePattern = OAM[4 * currentSprite + 1];
+					int currentSpriteAttribute = OAM[4 * currentSprite + 2];
+
+					int xOffset = renderX - currentSpriteX;
+					int yOffset = renderY - currentSpriteY;
+					int spriteRenderLine = 16 * currentSpritePattern + (currentSpriteAttribute & 0x80 ? spriteHeight - yOffset : yOffset);
 					if (PPUCTRL.spriteSize)
 					{
-						if ((OAM[4 * currentSprite + 2] & 0x80 ? spriteHeight - yOffset : yOffset) > 7)
+						if ((currentSpriteAttribute & 0x80 ? spriteHeight - yOffset : yOffset) > 7)
 						{
 							spriteRenderLine += 8;
 						}
-						if (OAM[4 * currentSprite + 1] & 0x1)
+						if (currentSpritePattern & 0x1)
 						{
 							spriteRenderLine += 0x1000 - 0x10;
 						}
@@ -375,32 +364,14 @@ namespace PPU
 					{
 						spriteRenderLine += PPUCTRL.spritePaternTable * 0x1000;
 					}
-					int spritePixelOffset = OAM[4 * currentSprite + 2] & 0x40 ? 7 - xOffset : xOffset;
+					int spritePixelOffset = currentSpriteAttribute & 0x40 ? 7 - xOffset : xOffset;
 					int colorSprite = ((read(spriteRenderLine) << spritePixelOffset) & 0x80)
 						+ 2 * ((read(spriteRenderLine + 8) << spritePixelOffset) & 0x80);
-					if (colorBackground == 0 || !(OAM[4 * currentSprite + 2] & 0x20))
+					if (colorBackground == 0 || !(currentSpriteAttribute & 0x20) || !PPUMASK.showBackground)
 					{
-						switch (colorSprite)
+						if (colorSprite)
 						{
-						case 0x180:
-						{
-							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F13)]);
-							break;
-						}
-						case 0x100:
-						{
-							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F12)]);
-							break;
-						}
-						case 0x80:
-						{
-							renderImage.setPixel(renderX, renderY, NTSCPalette[read((OAM[4 * currentSprite + 2] & 0x03) * 4 + 0x3F11)]);
-							break;
-						}
-						case 0x0:
-						{
-
-						}
+							renderImage.setPixel(renderX, renderY, NTSCPalette[read((currentSpriteAttribute & 0x03) * 4 + 0x3F10 + colorSprite / 0x80)]);
 						}
 					}
 					if (colorSprite == 0 && currentSprite == 0 && PPUMASK.showBackground && PPUMASK.showSprites && colorBackground == 0)
