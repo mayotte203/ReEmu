@@ -25,6 +25,7 @@ namespace GUI
 	unsigned int fileMenuArrowPosition = 0;
 	unsigned int fileMenuPosition = 0;
 	unsigned int mainMenuArrowPosition = 0;
+	unsigned int arrowAnimationFrame = 0;
 	vector<string> ROMsFileNames;
 
 	sf::Image mainMenuBackgroundImage;
@@ -66,7 +67,7 @@ namespace GUI
 		{
 			return false;
 		}
-		if (!arrowImage.loadFromFile("resources/arrow.png"))
+		if (!arrowImage.loadFromFile("resources/arrow_sheet.png"))
 		{
 			return false;
 		}
@@ -84,6 +85,7 @@ namespace GUI
 
 		arrowTexture.loadFromImage(arrowImage);
 		arrowSprite.setTexture(arrowTexture);
+		arrowSprite.setTextureRect(sf::IntRect(0, 0, 28, 21));
 		arrowSprite.setPosition(50, 160);
 		for (int i = 0; i < FILE_MENU_POSITIONS; i++)
 		{
@@ -554,6 +556,8 @@ namespace GUI
 			{
 				elapsed = sf::Time::Zero;
 				window.clear();
+				arrowAnimationFrame = (arrowAnimationFrame + 1) % 100;
+				arrowSprite.setTextureRect(sf::IntRect(28 * ((arrowAnimationFrame / 5) % 4), 21 * ((arrowAnimationFrame / 5) / 4), 28, 21));
 				switch (currentState)
 				{
 				case MainMenu:
@@ -601,7 +605,7 @@ namespace GUI
 					window.draw(*PPU::getRenderSprite());
 					break;
 				}
-				}				
+				}			
 				window.display();
 				renderState = true;
 			}
